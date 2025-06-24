@@ -9,6 +9,7 @@ import { calculateAllRegimes } from '@/lib/calculations/tax-calculations';
 
 export default function HomePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   
   const { 
     loadFromURL, 
@@ -26,6 +27,23 @@ export default function HomePage() {
   useEffect(() => {
     loadFromURL();
   }, [loadFromURL]);
+
+  // Отслеживание размера экрана для правильного отображения мобильных элементов
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    // Проверяем при монтировании
+    checkIsMobile();
+
+    // Слушаем изменения размера окна
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
 
   // Пересчет при изменении параметров
   useEffect(() => {
@@ -77,69 +95,73 @@ export default function HomePage() {
   return (
     <div className="cyber-grid-bg min-h-screen">
       {/* Мобильный хедер с кнопкой меню */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 cyber-mobile-header">
-        <div className="flex items-center justify-between px-4 py-3">
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="mobile-menu-button cyber-button-mobile p-2"
-            aria-label="Открыть меню"
-          >
-            <div className={`cyber-hamburger ${isMobileMenuOpen ? 'active' : ''}`}>
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-          </button>
-          
-          <h1 className="text-lg font-cyber cyber-text-glow truncate">
-            EsTax Calculator
-          </h1>
-          
-          <div className="w-10"> {/* Spacer для центрирования заголовка */}</div>
+      {isMobile && (
+        <div className="fixed top-0 left-0 right-0 z-50 cyber-mobile-header">
+          <div className="flex items-center justify-between px-4 py-3">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="mobile-menu-button cyber-button-mobile p-2"
+              aria-label="Открыть меню"
+            >
+              <div className={`cyber-hamburger ${isMobileMenuOpen ? 'active' : ''}`}>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </button>
+            
+            <h1 className="text-lg font-cyber cyber-text-glow truncate">
+              EsTax Calculator
+            </h1>
+            
+            <div className="w-10"> {/* Spacer для центрирования заголовка */}</div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Мобильный оверлей */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40 cyber-mobile-overlay" />
+      {isMobile && isMobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 cyber-mobile-overlay" />
       )}
 
       {/* Sidebar с мобильной поддержкой */}
       <Sidebar 
         isMobileMenuOpen={isMobileMenuOpen} 
         onMobileClose={() => setIsMobileMenuOpen(false)}
+        isMobile={isMobile}
       />
       
       {/* Основной контент */}
       <main className="cyber-main cyber-scrollbar">
         {/* Десктопный заголовок */}
-        <header className="pt-8 mb-8 cyber-appear hidden lg:block">
-          <h1 className="text-4xl lg:text-5xl xl:text-6xl font-cyber cyber-text-glow">
-            EsTax Calculator 2025
-          </h1>
-          <p className="text-cyber-text-secondary mt-2 text-sm lg:text-base">
-            Сравнение налоговых режимов для IT-специалистов в Испании
-          </p>
-        </header>
+        {!isMobile && (
+          <header className="pt-6 mb-8 cyber-appear">
+            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-cyber cyber-text-glow leading-tight">
+              EsTax Calculator 2025
+            </h1>
+          </header>
+        )}
 
         {/* Мобильный отступ для фиксированного хедера */}
-        <div className="lg:hidden h-16"></div>
+        {isMobile && <div className="h-16"></div>}
 
-        {/* Мобильное приветствие */}
-        <section className="lg:hidden mb-6 cyber-appear">
-          <div className="cyber-card-mobile p-4">
-            <h2 className="text-xl font-cyber cyber-text-glow mb-2">
-              Добро пожаловать! 👋
-            </h2>
-            <p className="text-sm text-cyber-text-secondary">
-              Настройте параметры в меню и сравните налоговые режимы Испании
-            </p>
-          </div>
-        </section>
+        {/* Мобильное приветствие - ТОЛЬКО для мобильных устройств */}
+        {isMobile && (
+          <section className="mb-6 cyber-appear">
+            <div className="cyber-card-mobile p-4">
+              <h2 className="text-xl font-cyber cyber-text-glow mb-2">
+                Добро пожаловать! 👋
+              </h2>
+              <p className="text-sm text-cyber-text-secondary">
+                Настройте параметры в меню и сравните налоговые режимы Испании
+              </p>
+            </div>
+          </section>
+        )}
 
-        {/* Quick Stats для мобильной версии */}
-        {results.length > 0 && (
-          <section className="lg:hidden mb-6 cyber-appear">
+        {/* Quick Stats - ТОЛЬКО для мобильных устройств */}
+        {isMobile && results.length > 0 && (
+          <section className="mb-6 cyber-appear">
             <div className="cyber-card-mobile p-4">
               <h3 className="text-sm font-cyber text-cyber-cyan mb-3 flex items-center">
                 📊 Быстрая статистика
@@ -152,12 +174,12 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="text-center p-3 bg-cyber-darker/50 rounded border border-cyber-cyan/20">
-                  <div className="text-xs text-cyber-text-muted">Экономия/год</div>
+                  <div className="text-xs text-cyber-text-muted">Экономия vs худшего</div>
                   <div className="text-sm font-cyber text-cyber-green">
                     €{results.length > 1 ? 
                       Math.round(results.sort((a, b) => b.netAnnual - a.netAnnual)[0].netAnnual - 
-                                results.sort((a, b) => b.netAnnual - a.netAnnual)[1].netAnnual).toLocaleString() 
-                      : '0'}
+                                results.sort((a, b) => a.netAnnual - b.netAnnual)[0].netAnnual).toLocaleString() 
+                      : '0'}/год
                   </div>
                 </div>
               </div>
@@ -240,11 +262,13 @@ export default function HomePage() {
             </div>
 
             {/* Дополнительная информация для мобильных */}
-            <div className="lg:hidden mt-4 cyber-appear">
-              <p className="text-cyber-text-muted text-xs">
-                vibe producting. присматриваю как работает AI
-              </p>
-            </div>
+            {isMobile && (
+              <div className="mt-4 cyber-appear">
+                <p className="text-cyber-text-muted text-xs">
+                  vibe producting. присматриваю как работает AI
+                </p>
+              </div>
+            )}
           </div>
         </footer>
       </main>

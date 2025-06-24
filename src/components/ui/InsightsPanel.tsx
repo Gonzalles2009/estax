@@ -113,7 +113,7 @@ export function InsightsPanel({ results }: InsightsPanelProps) {
         {sortedResults.length > 1 && (
           <div className="cyber-card-mobile p-4">
             <h4 className="text-sm font-cyber text-cyber-yellow mb-3 flex items-center">
-              💰 Итоговая экономия
+              💰 Экономия vs лучшего
             </h4>
             <div className="space-y-2">
               {sortedResults.slice(1).map((result) => {
@@ -206,7 +206,7 @@ export function InsightsPanel({ results }: InsightsPanelProps) {
           {/* Разность с лучшим режимом */}
           {sortedResults.length > 1 && (
             <div className="mt-3 pt-3 border-t border-cyber-cyan/10">
-              <div className="text-xs text-cyber-text-muted mb-2">💸 Потери относительно лучшего:</div>
+              <div className="text-xs text-cyber-text-muted mb-2">💸 Потери vs лучшего режима:</div>
               <div className="space-y-1">
                 {sortedResults.slice(1).map((result) => {
                   const monthlyLoss = bestRegime.netMonthly - result.netMonthly;

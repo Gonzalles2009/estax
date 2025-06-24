@@ -411,6 +411,8 @@
     box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
     overflow-y: auto;
     clip-path: polygon(20px 0, 100% 0, calc(100% - 20px) 100%, 0 100%);
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   /* Основной контент */
