@@ -80,6 +80,7 @@ interface MainChartProps {
 export function MainChart({}: MainChartProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [chartKey, setChartKey] = useState(0); // Для принудительной перерисовки
+  const [isClient, setIsClient] = useState(false); // Проверка что мы на клиенте
   
   const { 
     selectedRegimes, 
@@ -91,16 +92,23 @@ export function MainChart({}: MainChartProps) {
     setAnnualRevenue
   } = useCalculatorStore();
 
-  // Детект мобильного устройства
+  // Проверка клиентской стороны и детект мобильного устройства
   useEffect(() => {
+    setIsClient(true); // Мы на клиенте!
+    
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      setChartKey(prev => prev + 1); // Перерисовываем график
+      if (typeof window !== 'undefined') {
+        setIsMobile(window.innerWidth < 768);
+        setChartKey(prev => prev + 1); // Перерисовываем график
+      }
     };
     
     checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    return () => window.removeEventListener('resize', checkIsMobile);
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', checkIsMobile);
+      return () => window.removeEventListener('resize', checkIsMobile);
+    }
   }, []);
 
   const generateChartData = (): ExtendedChartData => {
@@ -409,6 +417,20 @@ export function MainChart({}: MainChartProps) {
     }
   };
 
+  // Не рендерим Chart.js на сервере
+  if (!isClient) {
+    return (
+      <div className="cyber-chart flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-pulse">📊</div>
+          <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-cyber cyber-text-glow mb-2`}>
+            Загрузка графика...
+          </h3>
+        </div>
+      </div>
+    );
+  }
+
   if (selectedRegimes.length === 0) {
     return (
       <div className="cyber-chart flex items-center justify-center">
@@ -443,7 +465,9 @@ export function MainChart({}: MainChartProps) {
       )}
       
       <div className={`${isMobile ? 'h-[300px]' : 'h-[500px]'} w-full`}>
-        <Line key={chartKey} data={chartData} options={options} />
+        {isClient && typeof window !== 'undefined' && (
+          <Line key={chartKey} data={chartData} options={options} />
+        )}
       </div>
       
       {/* Мобильная легенда осей */}
