@@ -13,6 +13,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
+      <head>
+        {/* Мобильная консоль для дебага */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/eruda@3.0.1/eruda.min.js';
+                script.onload = function() { eruda.init(); };
+                document.head.appendChild(script);
+              }
+            `
+          }}
+        />
+      </head>
       <body>
         {children}
       </body>
