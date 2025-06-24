@@ -1,103 +1,203 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useEffect, useState } from 'react';
+import { useCalculatorStore } from '@/store/calculator-store';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { MainChart } from '@/components/charts/MainChart';
+import { InsightsPanel } from '@/components/ui/InsightsPanel';
+import { calculateAllRegimes } from '@/lib/calculations/tax-calculations';
+
+export default function HomePage() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  const { 
+    loadFromURL, 
+    annualRevenue, 
+    monthlyExpenses, 
+    community, 
+    maritalStatus, 
+    children,
+    selectedRegimes,
+    results,
+    setResults
+  } = useCalculatorStore();
+
+  // Загрузка данных из URL при монтировании
+  useEffect(() => {
+    loadFromURL();
+  }, [loadFromURL]);
+
+  // Пересчет при изменении параметров
+  useEffect(() => {
+    if (selectedRegimes.length > 0) {
+      const params = {
+        regime: selectedRegimes,
+        community,
+        maritalStatus,
+        children,
+        annualRevenue,
+        monthlyExpenses,
+        companyAge: 1,
+        beckhamYear: 1,
+        plannedDividends: 0,
+        stockOptions: 0
+      };
+
+      const newResults = calculateAllRegimes(params);
+      setResults(newResults);
+    }
+  }, [selectedRegimes, community, maritalStatus, children, annualRevenue, monthlyExpenses, setResults]);
+
+  // Закрытие мобильного меню при клике вне его
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const sidebar = document.querySelector('.cyber-sidebar');
+      const mobileButton = document.querySelector('.mobile-menu-button');
+      
+      if (sidebar && mobileButton && 
+          !sidebar.contains(event.target as Node) && 
+          !mobileButton.contains(event.target as Node)) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    if (isMobileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'hidden'; // Предотвращаем скролл фона
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="cyber-grid-bg min-h-screen">
+      {/* Мобильный хедер с кнопкой меню */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 cyber-mobile-header">
+        <div className="flex items-center justify-between px-4 py-3">
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="mobile-menu-button cyber-button-mobile p-2"
+            aria-label="Открыть меню"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <div className={`cyber-hamburger ${isMobileMenuOpen ? 'active' : ''}`}>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </button>
+          
+          <h1 className="text-lg font-cyber cyber-text-glow truncate">
+            EsTax Calculator
+          </h1>
+          
+          <div className="w-10"> {/* Spacer для центрирования заголовка */}</div>
         </div>
+      </div>
+
+      {/* Мобильный оверлей */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40 cyber-mobile-overlay" />
+      )}
+
+      {/* Sidebar с мобильной поддержкой */}
+      <Sidebar 
+        isMobileMenuOpen={isMobileMenuOpen} 
+        onMobileClose={() => setIsMobileMenuOpen(false)}
+      />
+      
+      {/* Основной контент */}
+      <main className="cyber-main cyber-scrollbar">
+        {/* Десктопный заголовок */}
+        <header className="pt-8 mb-8 cyber-appear hidden lg:block">
+          <h1 className="text-4xl lg:text-5xl xl:text-6xl font-cyber cyber-text-glow">
+            EsTax Calculator 2025
+          </h1>
+          <p className="text-cyber-text-secondary mt-2 text-sm lg:text-base">
+            Сравнение налоговых режимов для IT-специалистов в Испании
+          </p>
+        </header>
+
+        {/* Мобильный отступ для фиксированного хедера */}
+        <div className="lg:hidden h-16"></div>
+
+        {/* Мобильное приветствие */}
+        <section className="lg:hidden mb-6 cyber-appear">
+          <div className="cyber-card-mobile p-4">
+            <h2 className="text-xl font-cyber cyber-text-glow mb-2">
+              Добро пожаловать! 👋
+            </h2>
+            <p className="text-sm text-cyber-text-secondary">
+              Настройте параметры в меню и сравните налоговые режимы Испании
+            </p>
+          </div>
+        </section>
+
+        {/* Quick Stats для мобильной версии */}
+        {results.length > 0 && (
+          <section className="lg:hidden mb-6 cyber-appear">
+            <div className="cyber-card-mobile p-4">
+              <h3 className="text-sm font-cyber text-cyber-cyan mb-3 flex items-center">
+                📊 Быстрая статистика
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-3 bg-cyber-darker/50 rounded border border-cyber-cyan/20">
+                  <div className="text-xs text-cyber-text-muted">Лучший режим</div>
+                  <div className="text-sm font-cyber text-cyber-green">
+                    {results.sort((a, b) => b.netAnnual - a.netAnnual)[0]?.regime || '-'}
+                  </div>
+                </div>
+                <div className="text-center p-3 bg-cyber-darker/50 rounded border border-cyber-cyan/20">
+                  <div className="text-xs text-cyber-text-muted">Экономия/год</div>
+                  <div className="text-sm font-cyber text-cyber-green">
+                    €{results.length > 1 ? 
+                      Math.round(results.sort((a, b) => b.netAnnual - a.netAnnual)[0].netAnnual - 
+                                results.sort((a, b) => b.netAnnual - a.netAnnual)[1].netAnnual).toLocaleString() 
+                      : '0'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* График */}
+        <section className="mb-8 cyber-appear">
+          <MainChart results={results} />
+        </section>
+
+        {/* Insights панель */}
+        <section className="cyber-appear">
+          <InsightsPanel results={results} />
+        </section>
+
+        {/* Футер */}
+        <footer className="mt-16 pt-8 border-t border-cyber-cyan/20 text-center">
+          <p className="text-cyber-text-muted text-sm">
+            © 2025 EsTax Calculator | Данные актуальны на 2025 год
+          </p>
+          <p className="text-cyber-text-muted text-xs mt-2">
+            ⚠️ Для точных расчетов обращайтесь к налоговому консультанту
+          </p>
+          
+          {/* Мобильные social ссылки */}
+          <div className="lg:hidden mt-4 flex justify-center space-x-4">
+            <a href="#" className="text-cyber-cyan hover:text-cyber-magenta transition-colors">
+              <span className="text-xl">📧</span>
+            </a>
+            <a href="#" className="text-cyber-cyan hover:text-cyber-magenta transition-colors">
+              <span className="text-xl">🐦</span>
+            </a>
+            <a href="#" className="text-cyber-cyan hover:text-cyber-magenta transition-colors">
+              <span className="text-xl">💼</span>
+            </a>
+          </div>
+        </footer>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
