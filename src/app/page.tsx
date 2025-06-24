@@ -177,24 +177,74 @@ export default function HomePage() {
 
         {/* Футер */}
         <footer className="mt-16 pt-8 border-t border-cyber-cyan/20 text-center">
-          <p className="text-cyber-text-muted text-sm">
-            © 2025 EsTax Calculator | Данные актуальны на 2025 год
-          </p>
-          <p className="text-cyber-text-muted text-xs mt-2">
-            ⚠️ Для точных расчетов обращайтесь к налоговому консультанту
-          </p>
-          
-          {/* Мобильные social ссылки */}
-          <div className="lg:hidden mt-4 flex justify-center space-x-4">
-            <a href="#" className="text-cyber-cyan hover:text-cyber-magenta transition-colors">
-              <span className="text-xl">📧</span>
-            </a>
-            <a href="#" className="text-cyber-cyan hover:text-cyber-magenta transition-colors">
-              <span className="text-xl">🐦</span>
-            </a>
-            <a href="#" className="text-cyber-cyan hover:text-cyber-magenta transition-colors">
-              <span className="text-xl">💼</span>
-            </a>
+          <div className="space-y-3">
+            {/* Автор */}
+            <div className="cyber-appear">
+              <p className="text-cyber-text-secondary text-sm font-cyber">
+                Made with <span className="text-cyber-magenta animate-pulse">❤️</span> by{' '}
+                <a 
+                  href="https://t.me/Gonzalles2009" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-cyber-cyan hover:text-cyber-magenta transition-all duration-300 hover:underline font-semibold"
+                >
+                  Aleksandr Kudriavtsev
+                </a>
+              </p>
+            </div>
+
+            {/* Основная информация */}
+            <div className="cyber-appear">
+              <p className="text-cyber-text-muted text-sm">
+                © 2025 EsTax Calculator | Данные актуальны на 2025 год
+              </p>
+              <p className="text-cyber-text-muted text-xs mt-2">
+                ⚠️ Для точных расчетов обращайтесь к налоговому консультанту
+              </p>
+            </div>
+
+            {/* Контактная информация */}
+            <div className="cyber-appear">
+              <div className="flex justify-center items-center space-x-6 mt-4">
+                {/* Telegram */}
+                <a 
+                  href="https://t.me/Gonzalles2009" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="group flex items-center space-x-2 text-cyber-cyan hover:text-cyber-magenta transition-all duration-300"
+                  title="Связаться в Telegram"
+                >
+                  <span className="text-lg group-hover:scale-110 transition-transform">📱</span>
+                  <span className="text-xs font-medium group-hover:underline hidden lg:inline">
+                    @Gonzalles2009
+                  </span>
+                </a>
+
+                {/* Разделитель */}
+                <span className="text-cyber-cyan/30">•</span>
+
+                {/* GitHub (когда будет репозиторий) */}
+                <a 
+                  href="https://github.com/Gonzalles2009/estax" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="group flex items-center space-x-2 text-cyber-cyan hover:text-cyber-magenta transition-all duration-300"
+                  title="Исходный код на GitHub"
+                >
+                  <span className="text-lg group-hover:scale-110 transition-transform">💻</span>
+                  <span className="text-xs font-medium group-hover:underline hidden lg:inline">
+                    Source Code
+                  </span>
+                </a>
+              </div>
+            </div>
+
+            {/* Дополнительная информация для мобильных */}
+            <div className="lg:hidden mt-4 cyber-appear">
+              <p className="text-cyber-text-muted text-xs">
+                vibe producting. присматриваю как работает AI
+              </p>
+            </div>
           </div>
         </footer>
       </main>
