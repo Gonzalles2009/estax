@@ -1,7 +1,7 @@
 'use client';
 
 import { Line } from 'react-chartjs-2';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -81,6 +81,11 @@ export function MainChart({}: MainChartProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [chartKey, setChartKey] = useState(0); // Для принудительной перерисовки
   const [isClient, setIsClient] = useState(false); // Проверка что мы на клиенте
+  const [isDragging, setIsDragging] = useState(false); // Отслеживание drag состояния
+  
+  // Throttling для drag событий
+  const lastDragTime = useRef(0);
+  const dragThrottleMs = 50; // Ограничиваем до 20 FPS
   
   const { 
     selectedRegimes, 
@@ -99,7 +104,10 @@ export function MainChart({}: MainChartProps) {
     const checkIsMobile = () => {
       if (typeof window !== 'undefined') {
         setIsMobile(window.innerWidth < 768);
-        setChartKey(prev => prev + 1); // Перерисовываем график
+        // Перерисовываем график только если не идёт drag
+        if (!isDragging) {
+          setChartKey(prev => prev + 1);
+        }
       }
     };
     
@@ -109,7 +117,7 @@ export function MainChart({}: MainChartProps) {
       window.addEventListener('resize', checkIsMobile);
       return () => window.removeEventListener('resize', checkIsMobile);
     }
-  }, []);
+  }, [isDragging]);
 
   const generateChartData = (): ExtendedChartData => {
     try {
@@ -256,10 +264,15 @@ export function MainChart({}: MainChartProps) {
             // Проверяем что мы на клиенте
             if (typeof window === 'undefined' || !isClient) return false;
             
+            // Сбрасываем throttling и устанавливаем drag состояние
+            lastDragTime.current = 0;
+            setIsDragging(true);
+            
             // Разрешаем drag только для нашей точки (datasetIndex = 1 на мобильном, 1 на десктопе)
             return datasetIndex === (isMobile ? 0 : 1);
           } catch (error) {
             console.error('DragStart error:', error);
+            setIsDragging(false);
             return false;
           }
         },
@@ -267,6 +280,13 @@ export function MainChart({}: MainChartProps) {
           try {
             // Проверяем что мы на клиенте
             if (typeof window === 'undefined' || !isClient) return;
+            
+            // Throttling для предотвращения перегрузки при быстром движении
+            const now = Date.now();
+            if (now - lastDragTime.current < dragThrottleMs) {
+              return; // Пропускаем событие если слишком рано
+            }
+            lastDragTime.current = now;
             
             // Обновляем в реальном времени во время перетаскивания
             if (datasetIndex === (isMobile ? 0 : 1)) {
@@ -282,11 +302,13 @@ export function MainChart({}: MainChartProps) {
               }
               const newRevenue = revenueRange[newIncomeIndex];
               
-              // Обновляем доход в сторе в реальном времени
-              setAnnualRevenue(Math.min(Math.max(newRevenue, 30000), 300000));
+              // Безопасное обновление дохода в сторе
+              const safeRevenue = Math.min(Math.max(newRevenue, 30000), 300000);
+              setAnnualRevenue(safeRevenue);
             }
           } catch (error) {
             console.error('Drag error:', error);
+            setIsDragging(false);
           }
         },
         onDragEnd: (event: MouseEvent | TouchEvent, datasetIndex: number, index: number, value: number | {x: number, y: number} | null) => {
@@ -294,7 +316,10 @@ export function MainChart({}: MainChartProps) {
             // Проверяем что мы на клиенте
             if (typeof window === 'undefined' || !isClient) return;
             
-            // Scatter dataset для перетаскиваемой точки
+            // Сбрасываем drag состояние
+            setIsDragging(false);
+            
+            // Финальное обновление позиции точки
             if (datasetIndex === (isMobile ? 0 : 1)) {
               // Получаем диапазон доходов
               const revenueRange = Array.from({ length: 55 }, (_, i) => 30000 + (i * 5000));
@@ -308,11 +333,15 @@ export function MainChart({}: MainChartProps) {
               }
               const newRevenue = revenueRange[newIncomeIndex];
               
-              // Обновляем доход в сторе
-              setAnnualRevenue(Math.min(Math.max(newRevenue, 30000), 300000));
+              // Финальное безопасное обновление дохода
+              const safeRevenue = Math.min(Math.max(newRevenue, 30000), 300000);
+              setAnnualRevenue(safeRevenue);
+              
+              console.log('Drag ended, final revenue:', safeRevenue);
             }
           } catch (error) {
             console.error('DragEnd error:', error);
+            setIsDragging(false);
           }
         }
       },
