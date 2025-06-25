@@ -252,45 +252,67 @@ export function MainChart({}: MainChartProps) {
         dragX: true,
         dragY: false,
         onDragStart: (event: MouseEvent | TouchEvent, datasetIndex: number) => {
-          // Разрешаем drag только для нашей точки (datasetIndex = 1 на мобильном, 1 на десктопе)
-          return datasetIndex === (isMobile ? 0 : 1);
+          try {
+            // Проверяем что мы на клиенте
+            if (typeof window === 'undefined' || !isClient) return false;
+            
+            // Разрешаем drag только для нашей точки (datasetIndex = 1 на мобильном, 1 на десктопе)
+            return datasetIndex === (isMobile ? 0 : 1);
+          } catch (error) {
+            console.error('DragStart error:', error);
+            return false;
+          }
         },
         onDrag: (event: MouseEvent | TouchEvent, datasetIndex: number, index: number, value: number | {x: number, y: number} | null) => {
-          // Обновляем в реальном времени во время перетаскивания
-          if (datasetIndex === (isMobile ? 0 : 1)) {
-            // Получаем диапазон доходов
-            const revenueRange = Array.from({ length: 55 }, (_, i) => 30000 + (i * 5000));
+          try {
+            // Проверяем что мы на клиенте
+            if (typeof window === 'undefined' || !isClient) return;
             
-            // Получаем новое значение дохода из позиции точки
-            let newIncomeIndex: number;
-            if (typeof value === 'object' && value !== null && 'x' in value) {
-              newIncomeIndex = Math.round(Math.max(0, Math.min(revenueRange.length - 1, value.x)));
-            } else {
-              newIncomeIndex = Math.round(Math.max(0, Math.min(revenueRange.length - 1, index)));
+            // Обновляем в реальном времени во время перетаскивания
+            if (datasetIndex === (isMobile ? 0 : 1)) {
+              // Получаем диапазон доходов
+              const revenueRange = Array.from({ length: 55 }, (_, i) => 30000 + (i * 5000));
+              
+              // Получаем новое значение дохода из позиции точки
+              let newIncomeIndex: number;
+              if (typeof value === 'object' && value !== null && 'x' in value) {
+                newIncomeIndex = Math.round(Math.max(0, Math.min(revenueRange.length - 1, value.x)));
+              } else {
+                newIncomeIndex = Math.round(Math.max(0, Math.min(revenueRange.length - 1, index)));
+              }
+              const newRevenue = revenueRange[newIncomeIndex];
+              
+              // Обновляем доход в сторе в реальном времени
+              setAnnualRevenue(Math.min(Math.max(newRevenue, 30000), 300000));
             }
-            const newRevenue = revenueRange[newIncomeIndex];
-            
-            // Обновляем доход в сторе в реальном времени
-            setAnnualRevenue(Math.min(Math.max(newRevenue, 30000), 300000));
+          } catch (error) {
+            console.error('Drag error:', error);
           }
         },
         onDragEnd: (event: MouseEvent | TouchEvent, datasetIndex: number, index: number, value: number | {x: number, y: number} | null) => {
-          // Scatter dataset для перетаскиваемой точки
-          if (datasetIndex === (isMobile ? 0 : 1)) {
-            // Получаем диапазон доходов
-            const revenueRange = Array.from({ length: 55 }, (_, i) => 30000 + (i * 5000));
+          try {
+            // Проверяем что мы на клиенте
+            if (typeof window === 'undefined' || !isClient) return;
             
-            // Получаем новое значение дохода из позиции точки
-            let newIncomeIndex: number;
-            if (typeof value === 'object' && value !== null && 'x' in value) {
-              newIncomeIndex = Math.round(Math.max(0, Math.min(revenueRange.length - 1, value.x)));
-            } else {
-              newIncomeIndex = Math.round(Math.max(0, Math.min(revenueRange.length - 1, index)));
+            // Scatter dataset для перетаскиваемой точки
+            if (datasetIndex === (isMobile ? 0 : 1)) {
+              // Получаем диапазон доходов
+              const revenueRange = Array.from({ length: 55 }, (_, i) => 30000 + (i * 5000));
+              
+              // Получаем новое значение дохода из позиции точки
+              let newIncomeIndex: number;
+              if (typeof value === 'object' && value !== null && 'x' in value) {
+                newIncomeIndex = Math.round(Math.max(0, Math.min(revenueRange.length - 1, value.x)));
+              } else {
+                newIncomeIndex = Math.round(Math.max(0, Math.min(revenueRange.length - 1, index)));
+              }
+              const newRevenue = revenueRange[newIncomeIndex];
+              
+              // Обновляем доход в сторе
+              setAnnualRevenue(Math.min(Math.max(newRevenue, 30000), 300000));
             }
-            const newRevenue = revenueRange[newIncomeIndex];
-            
-            // Обновляем доход в сторе
-            setAnnualRevenue(Math.min(Math.max(newRevenue, 30000), 300000));
+          } catch (error) {
+            console.error('DragEnd error:', error);
           }
         }
       },
