@@ -164,8 +164,10 @@ export function MainChart({}: MainChartProps) {
 
   const generateChartData = (): ExtendedChartData => {
     try {
-      // Генерация диапазона доходов от 30k до 300k с шагом 5k
-      const revenueRange = Array.from({ length: 55 }, (_, i) => 30000 + (i * 5000)); // 30k, 35k, 40k... 300k
+      // Генерация диапазона доходов - на мобилке реже точки для красоты
+      const step = isMobile ? 10000 : 5000; // На мобилке шаг 10k, на десктопе 5k
+      const count = isMobile ? 28 : 55; // Меньше точек на мобилке
+      const revenueRange = Array.from({ length: count }, (_, i) => 30000 + (i * step));
 
       const datasets = [];
 
@@ -255,8 +257,8 @@ export function MainChart({}: MainChartProps) {
           backgroundColor: (CHART_COLORS[regime] || '#00ffff') + '20',
           borderWidth: isMobile ? 4 : 3, // Толще на мобильном
           tension: 0.4,
-          pointRadius: isMobile ? 6 : 4, // Больше точки на мобильном
-          pointHoverRadius: isMobile ? 8 : 6,
+          pointRadius: isMobile ? 3 : 4, // Меньше точки на мобильном
+          pointHoverRadius: isMobile ? 5 : 6,
           pointBackgroundColor: CHART_COLORS[regime] || '#00ffff',
           pointBorderColor: '#0a0a0f',
           pointBorderWidth: 2,
@@ -331,7 +333,9 @@ export function MainChart({}: MainChartProps) {
             // Батчинг обновлений для предотвращения browser flooding
             if (datasetIndex === (isMobile ? 0 : 1)) {
               // Получаем диапазон доходов
-              const revenueRange = Array.from({ length: 55 }, (_, i) => 30000 + (i * 5000));
+              const step = isMobile ? 10000 : 5000;
+              const count = isMobile ? 28 : 55;
+              const revenueRange = Array.from({ length: count }, (_, i) => 30000 + (i * step));
               
               // Получаем новое значение дохода из позиции точки
               let newIncomeIndex: number;
@@ -387,7 +391,9 @@ export function MainChart({}: MainChartProps) {
             // Финальное обновление позиции точки
             if (datasetIndex === (isMobile ? 0 : 1)) {
               // Получаем диапазон доходов
-              const revenueRange = Array.from({ length: 55 }, (_, i) => 30000 + (i * 5000));
+              const step = isMobile ? 10000 : 5000;
+              const count = isMobile ? 28 : 55;
+              const revenueRange = Array.from({ length: count }, (_, i) => 30000 + (i * step));
               
               // Получаем новое значение дохода из позиции точки
               let newIncomeIndex: number;
@@ -471,7 +477,7 @@ export function MainChart({}: MainChartProps) {
         type: 'linear', // Изменяем на linear для поддержки dragX
         display: true,
         min: 0,
-        max: 54, // 55 точек (0-54)
+        max: isMobile ? 27 : 54, // Динамическое количество точек
         title: {
           display: !isMobile, // Скрываем заголовок на мобильном для экономии места
           text: 'Валовая выручка в год',
@@ -496,7 +502,8 @@ export function MainChart({}: MainChartProps) {
           maxTicksLimit: isMobile ? 8 : 12, // Ограничиваем количество тиков
           callback: function(value) {
             // Преобразуем индекс в label дохода
-            const revenue = 30000 + (Number(value) * 5000);
+            const step = isMobile ? 10000 : 5000;
+            const revenue = 30000 + (Number(value) * step);
             return isMobile ? `${revenue / 1000}k` : `${revenue / 1000}k€`;
           }
         }

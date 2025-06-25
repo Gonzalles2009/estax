@@ -155,6 +155,14 @@
     min-height: 44px; /* Мобильная доступность */
   }
 
+  /* Мобильная адаптация кнопок - больше отступов из-за clip-path */
+  @media (max-width: 768px) {
+    .cyber-button {
+      padding: 0.75rem 2rem; /* Увеличенные боковые отступы */
+      clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); /* Меньше срезанных углов */
+    }
+  }
+
   .cyber-button:hover {
     background-color: var(--cyber-cyan);
     color: var(--cyber-dark);
@@ -190,6 +198,14 @@
     min-height: 44px; /* Мобильная доступность */
   }
 
+  /* Мобильная адаптация инпутов - больше отступов из-за clip-path */
+  @media (max-width: 768px) {
+    .cyber-input {
+      padding: 0.75rem 1.5rem; /* Увеличенные боковые отступы */
+      clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%); /* Меньше срезанных углов */
+    }
+  }
+
   .cyber-input::placeholder {
     color: var(--cyber-text-muted);
   }
@@ -216,8 +232,8 @@
   /* Мобильная адаптация карточек */
   @media (max-width: 768px) {
     .cyber-card {
-      padding: 1.5rem;
-      clip-path: polygon(15px 0, 100% 0, calc(100% - 15px) 100%, 0 100%);
+      padding: 1.5rem 2rem; /* Увеличенные боковые отступы */
+      clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); /* Меньше срезанных углов */
     }
   }
 
@@ -471,6 +487,7 @@
     
     .cyber-card-mobile {
       border-radius: 8px;
+      padding: 1rem 1.5rem; /* Увеличенные боковые отступы для мобилки */
     }
   }
 
@@ -493,18 +510,19 @@
   /* Мобильная версия графика */
   @media (max-width: 768px) {
     .cyber-chart {
-      padding: 1.5rem 1rem;
+      padding: 1.5rem 2rem; /* Увеличенные боковые отступы */
       min-height: 20rem;
-      clip-path: polygon(15px 0, 100% 0, calc(100% - 15px) 100%, 0 100%);
+      clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); /* Меньше срезанных углов */
       border-radius: 12px;
     }
   }
 
   @media (max-width: 480px) {
     .cyber-chart {
-      padding: 1rem 0.5rem;
+      padding: 1rem 1.5rem; /* Увеличенные боковые отступы */
       min-height: 16rem;
       border-radius: 8px;
+      clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); /* Еще меньше срезанных углов */
     }
   }
 
