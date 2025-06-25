@@ -101,6 +101,14 @@ export function MainChart({}: MainChartProps) {
   const pendingUpdate = useRef<number | null>(null);
   const lastRevenueUpdate = useRef<number>(annualRevenue);
 
+  // Хелпер для мобильного логирования
+  const mobileLog = (message: string, type = 'log') => {
+    if (typeof window !== 'undefined' && 'addMobileLog' in window) {
+      const logger = (window as typeof window & { addMobileLog: (msg: string, type?: string) => void }).addMobileLog;
+      logger(message, type);
+    }
+  };
+
   // Проверка клиентской стороны и детект мобильного устройства
   useEffect(() => {
     setIsClient(true); // Мы на клиенте!
@@ -131,6 +139,13 @@ export function MainChart({}: MainChartProps) {
       }
     };
   }, []);
+
+  // Логирование для детальной диагностики
+  useEffect(() => {
+    mobileLog(`📊 Chart component mounted. Client: ${isClient}, Mobile: ${isMobile}`);
+    mobileLog(`🎯 Selected regimes: ${selectedRegimes.join(', ')}`);
+    mobileLog(`💰 Annual revenue: €${annualRevenue}`);
+  }, [isClient, isMobile, selectedRegimes, annualRevenue]);
 
   const generateChartData = (): ExtendedChartData => {
     try {
@@ -281,11 +296,15 @@ export function MainChart({}: MainChartProps) {
             lastDragTime.current = 0;
             setIsDragging(true);
             
+            mobileLog(`🎮 Drag started on dataset ${datasetIndex}`);
+            
             // Разрешаем drag только для нашей точки (datasetIndex = 1 на мобильном, 1 на десктопе)
             return datasetIndex === (isMobile ? 0 : 1);
           } catch (error) {
             console.error('DragStart error:', error);
             setIsDragging(false);
+            
+            mobileLog(`❌ DragStart error: ${error instanceof Error ? error.message : String(error)}`, 'error');
             return false;
           }
         },
@@ -332,6 +351,8 @@ export function MainChart({}: MainChartProps) {
           } catch (error) {
             console.error('Drag error:', error);
             setIsDragging(false);
+            
+            mobileLog(`❌ Drag error: ${error instanceof Error ? error.message : String(error)}`, 'error');
           }
         },
         onDragEnd: (event: MouseEvent | TouchEvent, datasetIndex: number, index: number, value: number | {x: number, y: number} | null) => {
@@ -369,11 +390,15 @@ export function MainChart({}: MainChartProps) {
               setTimeout(() => {
                 setAnnualRevenue(safeRevenue);
                 console.log('Drag ended, final revenue:', safeRevenue);
+                
+                mobileLog(`🏁 Drag ended. Final revenue: €${safeRevenue}`);
               }, 0);
             }
           } catch (error) {
             console.error('DragEnd error:', error);
             setIsDragging(false);
+            
+            mobileLog(`❌ DragEnd error: ${error instanceof Error ? error.message : String(error)}`, 'error');
           }
         }
       },
