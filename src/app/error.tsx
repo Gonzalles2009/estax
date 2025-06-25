@@ -11,7 +11,49 @@ export default function Error({
 }) {
   useEffect(() => {
     console.error('Application error:', error)
+    
+    // Более детальное логирование для script errors
+    if (error.message.includes('Script error')) {
+      console.error('Script error details:', {
+        message: error.message,
+        stack: error.stack,
+        digest: error.digest,
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+        url: typeof window !== 'undefined' ? window.location.href : 'unknown'
+      });
+    }
   }, [error])
+
+  // Глобальный обработчик window errors для script errors
+  useEffect(() => {
+    const handleWindowError = (event: ErrorEvent) => {
+      console.error('Window error caught:', {
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error,
+        type: 'window-error'
+      });
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Unhandled promise rejection:', {
+        reason: event.reason,
+        type: 'unhandled-rejection'
+      });
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('error', handleWindowError);
+      window.addEventListener('unhandledrejection', handleUnhandledRejection);
+      
+      return () => {
+        window.removeEventListener('error', handleWindowError);
+        window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+      };
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-cyber-dark flex items-center justify-center p-4">

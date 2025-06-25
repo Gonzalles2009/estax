@@ -14,6 +14,36 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <head>
+        {/* Глобальная обработка script errors */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Глобальная обработка script errors
+              window.addEventListener('error', function(e) {
+                console.error('🚨 Global script error:', {
+                  message: e.message,
+                  filename: e.filename,
+                  lineno: e.lineno,
+                  colno: e.colno,
+                  error: e.error,
+                  stack: e.error ? e.error.stack : 'No stack',
+                  userAgent: navigator.userAgent,
+                  timestamp: new Date().toISOString()
+                });
+              });
+              
+              // Обработка unhandled promise rejections
+              window.addEventListener('unhandledrejection', function(e) {
+                console.error('🚨 Global unhandled rejection:', {
+                  reason: e.reason,
+                  promise: e.promise,
+                  timestamp: new Date().toISOString()
+                });
+              });
+            `
+          }}
+        />
+        
         {/* Мобильная консоль для дебага */}
         <script
           dangerouslySetInnerHTML={{
@@ -21,7 +51,22 @@ export default function RootLayout({
               if (typeof window !== 'undefined' && window.innerWidth < 768) {
                 const script = document.createElement('script');
                 script.src = 'https://cdn.jsdelivr.net/npm/eruda@3.0.1/eruda.min.js';
-                script.onload = function() { eruda.init(); };
+                script.onload = function() { 
+                  eruda.init({
+                    useShadowDom: true,
+                    autoScale: true,
+                    defaults: {
+                      transparency: 0.9,
+                      displaySize: 50,
+                      theme: 'Dark'
+                    }
+                  }); 
+                  
+                  // Автоматически открываем консоль если есть ошибки
+                  window.addEventListener('error', () => {
+                    eruda.show('console');
+                  });
+                };
                 document.head.appendChild(script);
               }
             `
