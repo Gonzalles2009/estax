@@ -21,19 +21,21 @@ import { TaxCalculationResult } from '@/types/tax';
 import { calculateTaxRegime } from '@/lib/calculations/tax-calculations';
 import { useCalculatorStore } from '@/store/calculator-store';
 
-// Регистрируем компоненты Chart.js
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-  annotationPlugin,
-  dragDataPlugin
-);
+// Безопасная регистрация Chart.js компонентов только на клиенте
+if (typeof window !== 'undefined') {
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler,
+    annotationPlugin,
+    dragDataPlugin
+  );
+}
 
 // Константы для цветов режимов
 const CHART_COLORS: Record<string, string> = {
@@ -81,6 +83,7 @@ export function MainChart({}: MainChartProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [chartKey, setChartKey] = useState(0); // Для принудительной перерисовки
   const [isClient, setIsClient] = useState(false); // Проверка что мы на клиенте
+  const [isDomReady, setIsDomReady] = useState(false); // Проверка готовности DOM
   const [isDragging, setIsDragging] = useState(false); // Отслеживание drag состояния
   
   const { 
@@ -109,9 +112,20 @@ export function MainChart({}: MainChartProps) {
     }
   };
 
-  // Проверка клиентской стороны и детект мобильного устройства
+  // Проверка клиентской стороны и готовности DOM
   useEffect(() => {
     setIsClient(true); // Мы на клиенте!
+    
+    // Дополнительная проверка готовности DOM для Chart.js
+    const checkDomReady = () => {
+      if (typeof document !== 'undefined' && document.readyState === 'complete') {
+        setIsDomReady(true);
+        mobileLog('🔄 DOM ready for Chart.js');
+      } else {
+        // Ждем полной загрузки
+        setTimeout(checkDomReady, 100);
+      }
+    };
     
     const checkIsMobile = () => {
       if (typeof window !== 'undefined') {
@@ -124,6 +138,7 @@ export function MainChart({}: MainChartProps) {
     };
     
     checkIsMobile();
+    checkDomReady();
     
     if (typeof window !== 'undefined') {
       window.addEventListener('resize', checkIsMobile);
@@ -290,7 +305,7 @@ export function MainChart({}: MainChartProps) {
         onDragStart: (event: MouseEvent | TouchEvent, datasetIndex: number) => {
           try {
             // Проверяем что мы на клиенте
-            if (typeof window === 'undefined' || !isClient) return false;
+            if (typeof window === 'undefined' || !isClient || !isDomReady) return false;
             
             // Сбрасываем throttling и устанавливаем drag состояние
             lastDragTime.current = 0;
@@ -310,8 +325,8 @@ export function MainChart({}: MainChartProps) {
         },
         onDrag: (event: MouseEvent | TouchEvent, datasetIndex: number, index: number, value: number | {x: number, y: number} | null) => {
           try {
-            // Проверяем что мы на клиенте
-            if (typeof window === 'undefined' || !isClient) return;
+            // Проверяем что мы на клиенте и DOM готов
+            if (typeof window === 'undefined' || !isClient || !isDomReady) return;
             
             // Батчинг обновлений для предотвращения browser flooding
             if (datasetIndex === (isMobile ? 0 : 1)) {
@@ -357,8 +372,8 @@ export function MainChart({}: MainChartProps) {
         },
         onDragEnd: (event: MouseEvent | TouchEvent, datasetIndex: number, index: number, value: number | {x: number, y: number} | null) => {
           try {
-            // Проверяем что мы на клиенте
-            if (typeof window === 'undefined' || !isClient) return;
+            // Проверяем что мы на клиенте и DOM готов
+            if (typeof window === 'undefined' || !isClient || !isDomReady) return;
             
             // Сбрасываем drag состояние
             setIsDragging(false);
@@ -525,14 +540,14 @@ export function MainChart({}: MainChartProps) {
     }
   };
 
-  // Не рендерим Chart.js на сервере
-  if (!isClient) {
+  // Не рендерим Chart.js пока не готов клиент и DOM
+  if (!isClient || !isDomReady) {
     return (
       <div className="cyber-chart flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4 animate-pulse">📊</div>
           <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-cyber cyber-text-glow mb-2`}>
-            Загрузка графика...
+            {!isClient ? 'Инициализация...' : 'Подготовка графика...'}
           </h3>
         </div>
       </div>
@@ -573,7 +588,7 @@ export function MainChart({}: MainChartProps) {
       )}
       
       <div className={`${isMobile ? 'h-[300px]' : 'h-[500px]'} w-full`}>
-        {isClient && typeof window !== 'undefined' && (
+        {isClient && isDomReady && typeof window !== 'undefined' && (
           <Line key={chartKey} data={chartData} options={options} />
         )}
       </div>

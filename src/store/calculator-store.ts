@@ -194,6 +194,10 @@ export const useCalculatorStore = create<CalculatorStore>()(
 
 // Подписка на изменения для автоматического обновления URL
 if (typeof window !== 'undefined') {
+  let debounceTimeout: NodeJS.Timeout | null = null;
+  let lastUpdateTime = 0;
+  const MIN_UPDATE_INTERVAL = 1000; // Минимум 1 секунда между обновлениями URL
+  
   useCalculatorStore.subscribe(
     (state) => ({
       selectedRegimes: state.selectedRegimes,
@@ -204,12 +208,28 @@ if (typeof window !== 'undefined') {
       monthlyExpenses: state.monthlyExpenses
     }),
     () => {
-      // Debounce URL updates
-      const timeoutId = setTimeout(() => {
-        useCalculatorStore.getState().updateURL();
-      }, 100);
+      // Очищаем предыдущий timeout
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
       
-      return () => clearTimeout(timeoutId);
+      // Проверяем, что прошло достаточно времени
+      const now = Date.now();
+      const timeSinceLastUpdate = now - lastUpdateTime;
+      
+      if (timeSinceLastUpdate < MIN_UPDATE_INTERVAL) {
+        // Если слишком часто - откладываем обновление
+        debounceTimeout = setTimeout(() => {
+          lastUpdateTime = Date.now();
+          useCalculatorStore.getState().updateURL();
+        }, MIN_UPDATE_INTERVAL - timeSinceLastUpdate);
+      } else {
+        // Можно обновить сразу
+        debounceTimeout = setTimeout(() => {
+          lastUpdateTime = Date.now();
+          useCalculatorStore.getState().updateURL();
+        }, 500); // Небольшая задержка для batching
+      }
     }
   );
 } 
