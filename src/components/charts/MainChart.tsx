@@ -83,10 +83,6 @@ export function MainChart({}: MainChartProps) {
   const [isClient, setIsClient] = useState(false); // Проверка что мы на клиенте
   const [isDragging, setIsDragging] = useState(false); // Отслеживание drag состояния
   
-  // Throttling для drag событий
-  const lastDragTime = useRef(0);
-  const dragThrottleMs = 50; // Ограничиваем до 20 FPS
-  
   const { 
     selectedRegimes, 
     community, 
@@ -96,6 +92,14 @@ export function MainChart({}: MainChartProps) {
     annualRevenue,
     setAnnualRevenue
   } = useCalculatorStore();
+
+  // Throttling для drag событий (усиленный для предотвращения browser throttling)
+  const lastDragTime = useRef(0);
+  const dragThrottleMs = 100; // Ограничиваем до 10 FPS для избежания browser flood protection
+  
+  // Батчинг обновлений для предотвращения flooding
+  const pendingUpdate = useRef<number | null>(null);
+  const lastRevenueUpdate = useRef<number>(annualRevenue);
 
   // Проверка клиентской стороны и детект мобильного устройства
   useEffect(() => {
@@ -118,6 +122,15 @@ export function MainChart({}: MainChartProps) {
       return () => window.removeEventListener('resize', checkIsMobile);
     }
   }, [isDragging]);
+
+  // Cleanup pending updates при размонтировании
+  useEffect(() => {
+    return () => {
+      if (pendingUpdate.current) {
+        cancelAnimationFrame(pendingUpdate.current);
+      }
+    };
+  }, []);
 
   const generateChartData = (): ExtendedChartData => {
     try {
@@ -281,14 +294,7 @@ export function MainChart({}: MainChartProps) {
             // Проверяем что мы на клиенте
             if (typeof window === 'undefined' || !isClient) return;
             
-            // Throttling для предотвращения перегрузки при быстром движении
-            const now = Date.now();
-            if (now - lastDragTime.current < dragThrottleMs) {
-              return; // Пропускаем событие если слишком рано
-            }
-            lastDragTime.current = now;
-            
-            // Обновляем в реальном времени во время перетаскивания
+            // Батчинг обновлений для предотвращения browser flooding
             if (datasetIndex === (isMobile ? 0 : 1)) {
               // Получаем диапазон доходов
               const revenueRange = Array.from({ length: 55 }, (_, i) => 30000 + (i * 5000));
@@ -301,10 +307,27 @@ export function MainChart({}: MainChartProps) {
                 newIncomeIndex = Math.round(Math.max(0, Math.min(revenueRange.length - 1, index)));
               }
               const newRevenue = revenueRange[newIncomeIndex];
-              
-              // Безопасное обновление дохода в сторе
               const safeRevenue = Math.min(Math.max(newRevenue, 30000), 300000);
-              setAnnualRevenue(safeRevenue);
+              
+              // Сохраняем последнее значение для батчинга
+              lastRevenueUpdate.current = safeRevenue;
+              
+              // Throttled обновление с батчингом
+              const now = Date.now();
+              if (now - lastDragTime.current >= dragThrottleMs) {
+                lastDragTime.current = now;
+                
+                // Отменяем предыдущий pending update
+                if (pendingUpdate.current) {
+                  cancelAnimationFrame(pendingUpdate.current);
+                }
+                
+                // Планируем обновление на следующий frame
+                pendingUpdate.current = requestAnimationFrame(() => {
+                  setAnnualRevenue(lastRevenueUpdate.current);
+                  pendingUpdate.current = null;
+                });
+              }
             }
           } catch (error) {
             console.error('Drag error:', error);
@@ -318,6 +341,12 @@ export function MainChart({}: MainChartProps) {
             
             // Сбрасываем drag состояние
             setIsDragging(false);
+            
+            // Отменяем все pending updates
+            if (pendingUpdate.current) {
+              cancelAnimationFrame(pendingUpdate.current);
+              pendingUpdate.current = null;
+            }
             
             // Финальное обновление позиции точки
             if (datasetIndex === (isMobile ? 0 : 1)) {
@@ -333,11 +362,14 @@ export function MainChart({}: MainChartProps) {
               }
               const newRevenue = revenueRange[newIncomeIndex];
               
-              // Финальное безопасное обновление дохода
+              // Финальное безопасное обновление дохода (синхронно)
               const safeRevenue = Math.min(Math.max(newRevenue, 30000), 300000);
-              setAnnualRevenue(safeRevenue);
               
-              console.log('Drag ended, final revenue:', safeRevenue);
+              // Используем setTimeout для разделения обновления от drag события
+              setTimeout(() => {
+                setAnnualRevenue(safeRevenue);
+                console.log('Drag ended, final revenue:', safeRevenue);
+              }, 0);
             }
           } catch (error) {
             console.error('DragEnd error:', error);
