@@ -14,11 +14,11 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <head>
-        {/* Глобальная обработка ошибок для отладки */}
+        {/* Минимальная обработка ошибок для production */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              // Простая обработка ошибок без навязчивого UI
+              // Базовая обработка ошибок
               window.addEventListener('error', function(e) {
                 console.error('🚨 Global script error:', {
                   message: e.message,
@@ -40,50 +40,6 @@ export default function RootLayout({
                   timestamp: new Date().toISOString()
                 });
               });
-            `
-          }}
-        />
-        
-        {/* Eruda консоль только для мобильных устройств */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Загружаем Eruda только на мобильных для полноценной отладки
-              if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/eruda@3.0.1/eruda.min.js';
-                script.crossOrigin = 'anonymous';
-                
-                script.onload = function() { 
-                  try {
-                    eruda.init({
-                      useShadowDom: false,
-                      autoScale: true,
-                      defaults: {
-                        transparency: 0.9,
-                        displaySize: 50,
-                        theme: 'Dark'
-                      }
-                    });
-                    console.log('✅ Eruda console loaded successfully');
-                    
-                    // Автоматически открываем консоль при ошибках
-                    window.addEventListener('error', () => {
-                      if (typeof eruda !== 'undefined') {
-                        eruda.show('console');
-                      }
-                    });
-                  } catch (erudiErr) {
-                    console.error('❌ Eruda init failed:', erudiErr);
-                  }
-                };
-                
-                script.onerror = function() {
-                  console.error('❌ Failed to load Eruda CDN');
-                };
-                
-                document.head.appendChild(script);
-              }
             `
           }}
         />
