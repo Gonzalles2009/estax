@@ -298,6 +298,14 @@ export function MainChart({}: MainChartProps) {
       mode: 'point',
       intersect: true,
     },
+    // Настройки для исправления проблемы скролла на мобилке
+    onHover: (event) => {
+      // Разрешаем прокрутку страницы даже при hover на график
+      if (isMobile && event.native) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (event.native as any).preventDefault = () => {}; // Отключаем preventDefault
+      }
+    },
     plugins: {
       dragData: {
         round: 0,
@@ -594,7 +602,13 @@ export function MainChart({}: MainChartProps) {
         </div>
       )}
       
-      <div className={`${isMobile ? 'h-[300px]' : 'h-[500px]'} w-full`}>
+      <div 
+        className={`${isMobile ? 'h-[300px]' : 'h-[500px]'} w-full`}
+        style={isMobile ? {
+          // На мобилке разрешаем scroll при касании вне активной области
+          touchAction: 'pan-y', // Разрешаем вертикальный scroll
+        } : {}}
+      >
         {isClient && isDomReady && typeof window !== 'undefined' && (
           <Line key={chartKey} data={chartData} options={options} />
         )}

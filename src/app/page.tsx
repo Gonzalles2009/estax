@@ -170,7 +170,21 @@ export default function HomePage() {
                 <div className="text-center p-3 bg-cyber-darker/50 rounded border border-cyber-cyan/20">
                   <div className="text-xs text-cyber-text-muted">Лучший режим</div>
                   <div className="text-sm font-cyber text-cyber-green">
-                    {results.sort((a, b) => b.netAnnual - a.netAnnual)[0]?.regime || '-'}
+                    {(() => {
+                      const bestResult = results.sort((a, b) => b.netAnnual - a.netAnnual)[0];
+                      if (!bestResult) return '-';
+                      // Используем человекочитаемые названия
+                      const regimeNames: Record<string, string> = {
+                        empleado: 'Empleado',
+                        autonomo_regular: 'Autónomo Reg.',
+                        autonomo_tarifa_plana: 'Autónomo TP',
+                        sl_micro: 'SL Micro',
+                        sl_regular: 'SL Regular',
+                        startup_certificada: 'Startup',
+                        beckham: 'Beckham'
+                      };
+                      return regimeNames[bestResult.regime] || bestResult.regime;
+                    })()}
                   </div>
                 </div>
                 <div className="text-center p-3 bg-cyber-darker/50 rounded border border-cyber-cyan/20">
