@@ -1,17 +1,16 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { fromQuery, toQuery, useCalc } from "@/store/calc";
 import { REGIME_META } from "@/lib/regimes";
 import { REGIME_IDS } from "@/lib/tax/engine";
-import { n0 } from "@/lib/format";
-import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { Breakdown } from "./Breakdown";
 import { ChartPanel } from "./ChartPanel";
-import { FlowSection, useCurrentRegime } from "./FlowSection";
-import { Hero, budgetToPos, posToBudget } from "./Hero";
+import { FlowSection } from "./FlowSection";
+import { Hero } from "./Hero";
+import { ControlDock } from "./ControlDock";
 import { Ranking } from "./Ranking";
 import { ReceiptSection } from "./Receipt";
 import { Trace } from "./Trace";
@@ -159,23 +158,11 @@ function Comparison({ results }: { results: ReturnType<typeof useResults> }) {
 export function Calculator() {
   useUrlSync();
   const results = useResults();
-  const flowRef = useRef<HTMLDivElement>(null);
-  const [dock, setDock] = useState(false);
-
-  useEffect(() => {
-    const el = flowRef.current;
-    if (!el) return;
-    const io = new IntersectionObserver(([e]) => setDock(e.boundingClientRect.top < 0));
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
 
   return (
     <>
       <Hero results={results} />
-      <div ref={flowRef}>
-        <FlowSection results={results} />
-      </div>
+      <FlowSection results={results} />
       <Comparison results={results} />
       <ReceiptSection results={results} />
 
@@ -192,55 +179,7 @@ export function Calculator() {
         </Reveal>
       </section>
 
-      <MobileDock show={dock} results={results} />
+      <ControlDock results={results} />
     </>
-  );
-}
-
-function MobileDock({ show, results }: { show: boolean; results: ReturnType<typeof useResults> }) {
-  const { budget, set } = useCalc(useShallow((s) => ({ budget: s.budget, set: s.set })));
-  const { current } = useCurrentRegime(results);
-  const pos = budgetToPos(budget);
-  return (
-    <AnimatePresence>
-      {show && (
-        <motion.div
-          initial={{ y: 140 }}
-          animate={{ y: 0 }}
-          exit={{ y: 140 }}
-          transition={{ type: "spring", stiffness: 320, damping: 32 }}
-          className="card fixed inset-x-3 bottom-3 z-40 !rounded-[26px] px-5 pb-2 pt-3 backdrop-blur-xl lg:hidden"
-          style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
-        >
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <div className="text-[11px] text-ink-3">Сумма в год</div>
-              <div className="serif tnum text-2xl font-medium leading-tight text-ink">{n0(budget)} €</div>
-            </div>
-            <div className="text-right">
-              <div className="flex items-center justify-end gap-1.5 text-[11px] text-ink-3">
-                <span className="size-1.5 rounded-full" style={{ background: REGIME_META[current.regime].color }} />
-                {REGIME_META[current.regime].short}
-              </div>
-              <div className="serif text-2xl font-medium leading-tight text-ink">
-                <AnimatedNumber className="tnum" value={current.netMonthly} format={n0} />
-                <span className="ml-1 font-sans text-xs text-ink-3">€/мес</span>
-              </div>
-            </div>
-          </div>
-          <input
-            type="range"
-            aria-label="Годовая сумма"
-            className="range"
-            min={0}
-            max={1000}
-            step={1}
-            value={pos}
-            style={{ ["--fill" as string]: `${pos / 10}%` }}
-            onChange={(e) => set({ budget: posToBudget(Number(e.target.value)) })}
-          />
-        </motion.div>
-      )}
-    </AnimatePresence>
   );
 }

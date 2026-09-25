@@ -5,6 +5,7 @@ import type { EmployeeBasis, Family, RegimeId, RegionId } from "@/lib/tax/types"
 import { REGIME_IDS } from "@/lib/tax/engine";
 import { REGIONS } from "@/lib/tax/regions-2026";
 import { BUDGET_MAX, BUDGET_MIN, DEFAULTS, type ChartMode, type UiState } from "@/lib/defaults";
+import { decodeBeckham, encodeBeckham } from "@/lib/beckham";
 
 export { BUDGET_MAX, BUDGET_MIN, DEFAULTS, inputsOf, type ChartMode } from "@/lib/defaults";
 
@@ -63,6 +64,7 @@ export function toQuery(s: UiState): string {
   put("n", s.slNewCompany ? 1 : 0, 0);
   put("v", s.chartMode, DEFAULTS.chartMode);
   put("s", s.selected.join("."), DEFAULTS.selected.join("."));
+  put("bk", encodeBeckham(s.beckham), "");
   return q.toString();
 }
 
@@ -101,5 +103,7 @@ export function fromQuery(search: string): Partial<UiState> {
     const ids = sel.split(".").filter((id): id is RegimeId => (REGIME_IDS as readonly string[]).includes(id));
     if (ids.length) out.selected = REGIME_IDS.filter((r) => ids.includes(r));
   }
+  const bk = decodeBeckham(q.get("bk"));
+  if (bk) out.beckham = bk;
   return out;
 }

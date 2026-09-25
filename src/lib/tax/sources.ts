@@ -65,6 +65,11 @@ export const SOURCES = {
     short: "RIRPF art. 114",
     url: "https://www.boe.es/buscar/act.php?id=BOE-A-2007-6820#a114",
   },
+  rirpf_116: {
+    title: "RIRPF art. 116 — opción por el régimen de impatriados: modelo 149 en 6 meses (RD 1008/2023)",
+    short: "RIRPF art. 116",
+    url: "https://www.boe.es/buscar/act.php?id=BOE-A-2007-6820#a116",
+  },
   lgss_308: {
     title: "LGSS art. 308 — cotización de autónomos por ingresos reales",
     short: "LGSS art. 308",

@@ -52,6 +52,7 @@ export function InlinePicker<T extends string>({
   label,
   title,
   footer,
+  variant = "inline",
 }: {
   value: T;
   options: PickerOption<T>[];
@@ -61,6 +62,8 @@ export function InlinePicker<T extends string>({
   /** Заголовок в карточке/шторке */
   title: string;
   footer?: ReactNode;
+  /** inline — слово в тексте, chip — компактное поле (плавающая панель) */
+  variant?: "inline" | "chip";
 }) {
   const id = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -285,7 +288,11 @@ export function InlinePicker<T extends string>({
             openPicker();
           }
         }}
-        className="inline-field relative inline-flex items-baseline gap-1 px-1 text-left text-ink"
+        className={
+          variant === "chip"
+            ? "relative flex w-full items-center justify-between gap-2 overflow-hidden rounded-full border border-line bg-surface-2/60 px-3.5 py-2 text-left text-sm font-medium text-ink transition-colors hover:border-line-strong"
+            : "inline-field relative inline-flex items-baseline gap-1 px-1 text-left text-ink"
+        }
       >
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
@@ -294,6 +301,7 @@ export function InlinePicker<T extends string>({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
+            className={variant === "chip" ? "truncate" : undefined}
           >
             {current?.label}
           </motion.span>
@@ -301,7 +309,7 @@ export function InlinePicker<T extends string>({
         <motion.svg
           aria-hidden
           viewBox="0 0 20 20"
-          className="size-[0.55em] self-center text-accent"
+          className={`${variant === "chip" ? "size-3.5 shrink-0" : "size-[0.55em]"} self-center text-accent`}
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.25 }}
         >

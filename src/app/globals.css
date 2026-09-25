@@ -33,6 +33,7 @@
 
   --f-you: #b57d00;
   --f-tax: #b13554;
+  --ok: #118659;
   --f-ss: #2e69b2;
   --f-cost: #9a9284;
   --f-mid: rgb(28 26 23 / 0.16);
@@ -63,6 +64,7 @@
 
   --f-you: #b88c19;
   --f-tax: #c33d53;
+  --ok: #17a478;
   --f-ss: #4f8bd6;
   --f-cost: #6f695f;
   --f-mid: rgb(242 237 228 / 0.14);
@@ -95,6 +97,7 @@
 
   --color-f-you: var(--f-you);
   --color-f-tax: var(--f-tax);
+  --color-ok: var(--ok);
   --color-f-ss: var(--f-ss);
   --color-f-cost: var(--f-cost);
 

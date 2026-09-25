@@ -1,4 +1,5 @@
 import type { Inputs, RegimeId } from "./tax/types";
+import { EMPTY_BECKHAM, type BeckhamAnswers } from "./beckham";
 
 export type ChartMode = "net" | "share" | "delta";
 
@@ -11,6 +12,10 @@ export interface UiState extends Inputs {
   chartMode: ChartMode;
   /** Подсветка режима при наведении (не сохраняется в URL) */
   highlight: RegimeId | null;
+  /** Ответы на проверку права на Ley Beckham */
+  beckham: BeckhamAnswers;
+  /** Раскрыта ли проверка Beckham (не сохраняется в URL) */
+  checkOpen: boolean;
 }
 
 export const DEFAULTS: UiState = {
@@ -19,7 +24,8 @@ export const DEFAULTS: UiState = {
   family: "single",
   children: 0,
   childrenUnder3: 0,
-  workExpenses: 100,
+  // Свои траты на работу; 0 — как в обычном зарплатном калькуляторе
+  workExpenses: 0,
   employeeBasis: "cost",
   gestoriaAutonomo: 60,
   gestoriaSl: 180,
@@ -30,6 +36,8 @@ export const DEFAULTS: UiState = {
   moreOpen: false,
   chartMode: "delta",
   highlight: null,
+  beckham: EMPTY_BECKHAM,
+  checkOpen: false,
 };
 
 export const BUDGET_MIN = 15000;

@@ -5,7 +5,7 @@ import { useCalc } from "@/store/calc";
 import { n0 } from "@/lib/format";
 import { RangeField, Segmented, Switch } from "@/components/ui/controls";
 
-export function MoreSettings() {
+export function MoreSettings({ bare = false }: { bare?: boolean }) {
   const s = useCalc(
     useShallow((st) => ({
       basis: st.employeeBasis,
@@ -18,7 +18,7 @@ export function MoreSettings() {
   );
 
   return (
-    <div className="card mt-6 grid gap-x-10 gap-y-7 p-5 sm:p-7 md:grid-cols-2">
+    <div className={`grid gap-x-10 gap-y-7 md:grid-cols-2 ${bare ? "" : "card mt-6 p-5 sm:p-7"}`}>
       <div>
         <div className="eyebrow mb-2">Для найма сумма — это</div>
         <Segmented
@@ -46,7 +46,7 @@ export function MoreSettings() {
         max={1500}
         step={10}
         format={(v) => `${n0(v)} €/мес`}
-        hint="Ноутбук, связь, софт, коворкинг. Тратятся в любом режиме, но вычесть их из налоговой базы могут только autónomo и SL."
+        hint="Ваши собственные траты на работу: ноутбук, софт, связь, коворкинг. Они уходят из вашего кармана в любом режиме, но autónomo и SL вычитают их из налоговой базы — в этом их экономия. По умолчанию 0, как в обычном зарплатном калькуляторе."
       />
 
       <RangeField
