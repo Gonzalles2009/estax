@@ -49,10 +49,24 @@ describe("проверка Ley Beckham", () => {
     expect(availabilityOf("beckham", beckhamVerdict({ ...ok, filed: "no" }))).toBe("no");
   });
 
-  it("администратор компании — условно", () => {
-    const v = beckhamVerdict({ ...ok, basis: "admin" });
-    expect(v.status).toBe("maybe");
-    expect(availabilityOf("beckham", v)).toBe("check");
+  it("администратор, ENISA, стартап и член семьи — условно", () => {
+    for (const basis of ["admin", "enisa", "startup", "family"] as const) {
+      const v = beckhamVerdict({ ...ok, basis });
+      expect(v.status).toBe("maybe");
+      expect(availabilityOf("beckham", v)).toBe("check");
+    }
+    // Член семьи — пока режим действует у того, кто переехал по работе
+    expect(beckhamVerdict({ ...ok, basis: "family" }).until).toBeUndefined();
+  });
+
+  it("ответы на скрытые вопросы не влияют на вердикт", () => {
+    // Сняли ответ о годе переезда — прежний «срок прошёл» больше не учитывается
+    const a: BeckhamAnswers = { arrival: null, prior: "no", basis: "hire", filed: "no" };
+    expect(beckhamVerdict(a).status).toBe("unknown");
+    expect(visibleQuestions(a).map((q) => q.key)).toEqual(["arrival"]);
+    expect(beckhamVerdict({ ...a, prior: null, arrival: "2025" }).status).toBe("unknown");
+    // Вернули ответ — остальные снова в силе
+    expect(beckhamVerdict({ ...a, arrival: "2025" }).status).toBe("no");
   });
 
   it("вопросы открываются по одному и обрываются на отказе", () => {
@@ -76,6 +90,11 @@ describe("проверка Ley Beckham", () => {
       EMPTY_BECKHAM,
       ok,
       { ...ok, basis: "admin" },
+      { ...ok, basis: "enisa" },
+      { ...ok, basis: "startup" },
+      { ...ok, basis: "family" },
+      { ...ok, basis: "freelance" },
+      { ...ok, basis: "other" },
       { ...ok, filed: "no" },
       { ...ok, prior: "yes" },
       { ...ok, arrival: "earlier" },

@@ -40,6 +40,9 @@ export const DEFAULTS: UiState = {
   checkOpen: false,
 };
 
+/** До 25.09.2026 расходы по умолчанию были 100 €/мес и в ссылку не попадали — старые ссылки читаем с ними */
+export const LEGACY_WORK_EXPENSES = 100;
+
 export const BUDGET_MIN = 15000;
 export const BUDGET_MAX = 400000;
 

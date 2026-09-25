@@ -4,7 +4,7 @@ import { create } from "zustand";
 import type { EmployeeBasis, Family, RegimeId, RegionId } from "@/lib/tax/types";
 import { REGIME_IDS } from "@/lib/tax/engine";
 import { REGIONS } from "@/lib/tax/regions-2026";
-import { BUDGET_MAX, BUDGET_MIN, DEFAULTS, type ChartMode, type UiState } from "@/lib/defaults";
+import { BUDGET_MAX, BUDGET_MIN, DEFAULTS, LEGACY_WORK_EXPENSES, type ChartMode, type UiState } from "@/lib/defaults";
 import { decodeBeckham, encodeBeckham } from "@/lib/beckham";
 
 export { BUDGET_MAX, BUDGET_MIN, DEFAULTS, inputsOf, type ChartMode } from "@/lib/defaults";
@@ -47,6 +47,8 @@ const FAMILIES: Family[] = ["single", "couple", "couple_joint"];
 const BASES: EmployeeBasis[] = ["cost", "gross"];
 const MODES: ChartMode[] = ["net", "share", "delta"];
 
+const KNOWN_KEYS = ["b", "r", "f", "k", "k3", "m", "ga", "gs", "n", "v", "s", "bk"];
+
 export function toQuery(s: UiState): string {
   const q = new URLSearchParams();
   const put = (k: string, v: string | number, d: string | number) => {
@@ -65,6 +67,8 @@ export function toQuery(s: UiState): string {
   put("v", s.chartMode, DEFAULTS.chartMode);
   put("s", s.selected.join("."), DEFAULTS.selected.join("."));
   put("bk", encodeBeckham(s.beckham), "");
+  // Расходы пишем в любую непустую ссылку явно: так ссылка без «x» однозначно старая (см. fromQuery)
+  if (q.toString() !== "" && !q.has("x")) q.set("x", String(s.workExpenses));
   return q.toString();
 }
 
@@ -89,6 +93,8 @@ export function fromQuery(search: string): Partial<UiState> {
   if (k3 !== undefined) out.childrenUnder3 = k3;
   const x = num("x");
   if (x !== undefined) out.workExpenses = x;
+  // Старая ссылка: расходы были по умолчанию и не записывались
+  else if (KNOWN_KEYS.some((k) => q.has(k))) out.workExpenses = LEGACY_WORK_EXPENSES;
   const m = q.get("m");
   if (m && BASES.includes(m as EmployeeBasis)) out.employeeBasis = m as EmployeeBasis;
   const ga = num("ga");

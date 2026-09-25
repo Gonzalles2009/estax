@@ -20,7 +20,7 @@ export type BkArrival = "planned" | `${number}` | "earlier";
 /** Были ли резидентом Испании в любой из 5 лет до переезда */
 export type BkPrior = "no" | "yes";
 /** Основание переезда */
-export type BkBasis = "hire" | "remote" | "transfer" | "admin" | "freelance" | "other";
+export type BkBasis = "hire" | "remote" | "transfer" | "admin" | "enisa" | "startup" | "family" | "freelance" | "other";
 /** Подано ли заявление modelo 149 */
 export type BkFiled = "yes" | "pending" | "no";
 
@@ -81,14 +81,17 @@ export const QUESTIONS: {
       { value: "remote", label: "Удалённо на иностранного работодателя" },
       { value: "transfer", label: "Перевод от работодателя" },
       { value: "admin", label: "Администратор компании" },
-      { value: "freelance", label: "Фриланс / autónomo" },
+      { value: "enisa", label: "Свой бизнес с одобрением ENISA" },
+      { value: "startup", label: "Специалист для стартапа или R&D" },
+      { value: "family", label: "Вслед за супругом или родителем с Beckham" },
+      { value: "freelance", label: "Обычный фриланс / autónomo" },
       { value: "other", label: "Другое" },
     ],
   },
   {
     key: "filed",
     title: "Вы подали modelo 149?",
-    hint: "Срок — 6 месяцев с даты alta в Seguridad Social",
+    hint: "Срок — 6 месяцев с даты alta в Seguridad Social (члену семьи — с въезда в Испанию)",
     options: [
       { value: "yes", label: "Да, режим оформлен" },
       { value: "pending", label: "Ещё нет, 6 месяцев не прошли" },
@@ -100,7 +103,21 @@ export const QUESTIONS: {
 const SRC_LAW: SourceId[] = ["lirpf_93"];
 const SRC_FILING: SourceId[] = ["lirpf_93", "rirpf_116"];
 
+const SRC_RIRPF: SourceId[] = ["lirpf_93", "rirpf_114"];
+
+const UNKNOWN: BeckhamVerdict = {
+  status: "unknown",
+  title: "Не проверено",
+  text: "Режим только для недавно переехавших по работе. Ответьте на несколько вопросов — калькулятор учтёт ответ.",
+  sources: SRC_LAW,
+};
+
+/**
+ * Вердикт по ответам — строго по порядку вопросов: ответ учитывается,
+ * только если на все предыдущие уже ответили (как и видно в интерфейсе).
+ */
 export function beckhamVerdict(a: BeckhamAnswers): BeckhamVerdict {
+  if (a.arrival === null) return UNKNOWN;
   if (a.arrival === "earlier") {
     return {
       status: "no",
@@ -110,6 +127,8 @@ export function beckhamVerdict(a: BeckhamAnswers): BeckhamVerdict {
       sources: SRC_LAW,
     };
   }
+
+  if (a.prior === null) return UNKNOWN;
   if (a.prior === "yes") {
     return {
       status: "no",
@@ -119,11 +138,13 @@ export function beckhamVerdict(a: BeckhamAnswers): BeckhamVerdict {
       sources: SRC_LAW,
     };
   }
+
+  if (a.basis === null) return UNKNOWN;
   if (a.basis === "freelance") {
     return {
       status: "no",
-      title: "Фриланс режима не даёт",
-      text: "Обычный autónomo, в том числе с иностранными клиентами, под режим не подпадает. Исключения — бизнес, признанный инновационным (отчёт ENISA), и высококвалифицированные специалисты стартапов (art. 93.1.b.3º–4º LIRPF).",
+      title: "Обычный фриланс режима не даёт",
+      text: "Обычный autónomo, в том числе с иностранными клиентами, под режим не подпадает (art. 93.1.c LIRPF). Если ваш бизнес одобрен ENISA или вы работаете на стартап как высококвалифицированный специалист — выберите этот вариант выше.",
       stopAt: "basis",
       sources: SRC_LAW,
     };
@@ -132,43 +153,52 @@ export function beckhamVerdict(a: BeckhamAnswers): BeckhamVerdict {
     return {
       status: "no",
       title: "Нужен переезд ради работы",
-      text: "Режим дают за переезд ради работы по найму, должности администратора или одобренного бизнеса. Супруг и дети до 25 лет могут присоединиться к режиму члена семьи, который переехал по работе (art. 93.3 LIRPF).",
+      text: "Режим дают за переезд ради работы по найму, должности администратора, бизнеса с одобрением ENISA или работы на стартап (art. 93.1.b LIRPF). Если вы переехали вслед за супругом или родителем с Beckham — выберите этот вариант выше.",
       stopAt: "basis",
       sources: SRC_LAW,
     };
   }
-  if (a.arrival !== "planned" && a.filed === "no") {
-    return {
-      status: "no",
-      title: "Срок заявления пропущен",
-      text: "Modelo 149 подают не позже шести месяцев с даты alta в Seguridad Social (art. 116 RIRPF). Пропущенный срок не восстанавливается.",
-      stopAt: "filed",
-      sources: SRC_FILING,
-    };
-  }
 
-  const needFiled = a.arrival !== "planned";
-  if (a.arrival === null || a.prior === null || a.basis === null || (needFiled && a.filed === null)) {
-    return {
-      status: "unknown",
-      title: "Не проверено",
-      text: "Режим только для недавно переехавших по работе. Ответьте на несколько вопросов — калькулятор учтёт ответ.",
-      sources: SRC_LAW,
-    };
+  if (a.arrival !== "planned") {
+    if (a.filed === null) return UNKNOWN;
+    if (a.filed === "no") {
+      return {
+        status: "no",
+        title: "Срок заявления пропущен",
+        text: "Modelo 149 подают не позже шести месяцев с даты alta в Seguridad Social, члену семьи — с въезда в Испанию (art. 116 RIRPF). Пропущенный срок не восстанавливается.",
+        stopAt: "filed",
+        sources: SRC_FILING,
+      };
+    }
   }
 
   const until = a.arrival === "planned" ? undefined : Number(a.arrival) + 5;
   const period = until ? `по ${until} год включительно` : "шесть лет: год переезда и ещё пять";
   const noAutonomo = "Пока режим действует, вести обычную деятельность autónomo нельзя.";
+  const model = "Калькулятор считает Beckham для зарплаты по найму.";
 
-  if (a.basis === "admin") {
-    return {
-      status: "maybe",
-      title: "Возможно, доступен",
-      text: `Администратор компании подходит, если компания ведёт реальную деятельность; если это холдинг (entidad patrimonial), доля должна быть меньше 25%. Режим действует ${period}. Калькулятор считает Beckham для зарплаты по найму, а не для вознаграждения администратора.`,
-      until,
+  // Пути, где право зависит от условий, которые калькулятор проверить не может
+  const conditional: Partial<Record<BkBasis, { text: string; sources: SourceId[] }>> = {
+    admin: {
+      text: `Администратор компании подходит, если компания ведёт реальную деятельность; если это холдинг (entidad patrimonial), доля должна быть меньше 25% (art. 93.1.b.2º LIRPF). Режим действует ${period}. ${model}`,
       sources: SRC_LAW,
-    };
+    },
+    enisa: {
+      text: `Нужен положительный отчёт ENISA о том, что бизнес инновационный, — полученный до переезда (art. 93.1.b.3º LIRPF, art. 113 RIRPF). Тогда по 24% облагается и доход от этого бизнеса. Режим действует ${period}. ${model}`,
+      sources: SRC_RIRPF,
+    },
+    startup: {
+      text: `Нужна квалификация высококвалифицированного специалиста (art. 71 Ley 14/2013), а работа на стартап по Ley 28/2022 или в обучении и R&D должна давать больше 40% всех ваших доходов (art. 93.1.b.4º LIRPF, art. 113 RIRPF). Режим действует ${period}. ${model}`,
+      sources: SRC_RIRPF,
+    },
+    family: {
+      text: "Супруг, дети до 25 лет или второй родитель подходят, если переехали вместе с членом семьи, у которого Beckham, или до конца его первого года в режиме, и если сумма их баз меньше его базы (art. 93.3 LIRPF). Режим действует, пока он действует у него.",
+      sources: SRC_LAW,
+    },
+  };
+  const c = conditional[a.basis];
+  if (c) {
+    return { status: "maybe", title: "Возможно, доступен", text: c.text, until: a.basis === "family" ? undefined : until, sources: c.sources };
   }
 
   const filing =
@@ -203,7 +233,7 @@ export function visibleQuestions(a: BeckhamAnswers, verdict = beckhamVerdict(a))
 const ALLOWED: { [K in keyof BeckhamAnswers]: string[] } = {
   arrival: ["planned", "earlier", ...ARRIVAL_YEARS],
   prior: ["no", "yes"],
-  basis: ["hire", "remote", "transfer", "admin", "freelance", "other"],
+  basis: ["hire", "remote", "transfer", "admin", "enisa", "startup", "family", "freelance", "other"],
   filed: ["yes", "pending", "no"],
 };
 const KEYS = Object.keys(ALLOWED) as (keyof BeckhamAnswers)[];
