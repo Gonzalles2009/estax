@@ -1,51 +1,35 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+import { Providers } from "@/components/site/Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "EsTax Calculator 2025 - Налоговый калькулятор для IT в Испании",
-  description: "Калькулятор налогов для фрилансеров и IT-специалистов в Испании. Сравнение 7 налоговых режимов с киберпанк дизайном.",
+  metadataBase: new URL("https://estax.vercel.app"),
+  title: {
+    default: "EsTax·26 — честный калькулятор налогов Испании 2026",
+    template: "%s · EsTax·26",
+  },
+  description:
+    "Найм, Ley Beckham, autónomo или своя SL: сколько останется вам в 2026 году. 15 регионов, ставки сверены с BOE, каждая цифра со ссылкой на закон.",
+  openGraph: {
+    title: "EsTax·26 — сколько останется вам, а не Hacienda",
+    description: "Найм, Beckham, autónomo и SL на одном бюджете. Налоги Испании 2026 с исходниками.",
+    locale: "ru_RU",
+    type: "website",
+  },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const viewport: Viewport = {
+  themeColor: "#07080c",
+  colorScheme: "dark",
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ru">
-      <head>
-        {/* Минимальная обработка ошибок для production */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Базовая обработка ошибок
-              window.addEventListener('error', function(e) {
-                console.error('🚨 Global script error:', {
-                  message: e.message,
-                  filename: e.filename,
-                  lineno: e.lineno,
-                  colno: e.colno,
-                  error: e.error,
-                  stack: e.error ? e.error.stack : 'No stack',
-                  userAgent: navigator.userAgent,
-                  timestamp: new Date().toISOString()
-                });
-              });
-              
-              // Обработка unhandled promise rejections
-              window.addEventListener('unhandledrejection', function(e) {
-                console.error('🚨 Global unhandled rejection:', {
-                  reason: e.reason,
-                  promise: e.promise,
-                  timestamp: new Date().toISOString()
-                });
-              });
-            `
-          }}
-        />
-      </head>
-      <body>
-        {children}
+    <html lang="ru" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+      <body className="min-h-dvh overflow-x-hidden">
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
