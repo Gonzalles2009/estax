@@ -4,7 +4,10 @@ export type ChartMode = "net" | "share" | "delta";
 
 export interface UiState extends Inputs {
   selected: RegimeId[];
-  focus: RegimeId;
+  /** Режим, выбранный для потока денег, чека и расчёта; null — следовать за лучшим */
+  focus: RegimeId | null;
+  /** Открыта ли панель дополнительных параметров */
+  moreOpen: boolean;
   chartMode: ChartMode;
   /** Подсветка режима при наведении (не сохраняется в URL) */
   highlight: RegimeId | null;
@@ -23,7 +26,8 @@ export const DEFAULTS: UiState = {
   slNewCompany: false,
   // Временные льготы первого года и агрессивная SL — только по запросу, чтобы не искажать «лучший» режим
   selected: ["employee", "beckham", "autonomo", "sl_safe"],
-  focus: "autonomo",
+  focus: null,
+  moreOpen: false,
   chartMode: "delta",
   highlight: null,
 };

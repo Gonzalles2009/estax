@@ -193,8 +193,8 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
         >
           <defs>
             <linearGradient id="budget-line" gradientUnits="userSpaceOnUse" x1="0" x2="0" y1={pad.t - 6} y2={H - pad.b}>
-              <stop offset="0%" stopColor="#ffb224" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="#ff5f45" stopOpacity="0.15" />
+              <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.1" />
             </linearGradient>
           </defs>
 
@@ -206,10 +206,10 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
                 x2={W - pad.r}
                 y1={y(t)}
                 y2={y(t)}
-                stroke={t === 0 && mode !== "share" ? "rgb(255 255 255 / 0.28)" : "rgb(255 255 255 / 0.06)"}
+                stroke={t === 0 && mode !== "share" ? "var(--line-strong)" : "var(--line)"}
                 strokeDasharray={t === 0 ? undefined : "2 4"}
               />
-              <text x={pad.l - 10} y={y(t)} dy="0.32em" textAnchor="end" className="tnum fill-fg-3 text-[11px]">
+              <text x={pad.l - 10} y={y(t)} dy="0.32em" textAnchor="end" className="tnum fill-ink-3 text-[11px]">
                 {fmtY(mode, t)}
               </text>
             </g>
@@ -222,7 +222,7 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
               x={x(t)}
               y={H - pad.b + 30}
               textAnchor="middle"
-              className="tnum fill-fg-3 text-[11px]"
+              className="tnum fill-ink-3 text-[11px]"
             >
               {kEur(t)}
             </text>
@@ -280,7 +280,7 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
               transition={{ type: "spring", stiffness: 200, damping: 28 }}
             >
               <circle cx={W - pad.r + 10} cy={0} r={3.5} fill={REGIME_META[r].color} />
-              <text x={W - pad.r + 20} y={0} dy="0.32em" className="fill-fg-2 text-[12px] font-medium">
+              <text x={W - pad.r + 20} y={0} dy="0.32em" className="fill-ink-2 text-[12px] font-medium">
                 {REGIME_META[r].short}
               </text>
             </motion.g>
@@ -290,8 +290,8 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
           <motion.g initial={false} animate={{ x: bx }} transition={spring}>
             <line x1={0} x2={0} y1={pad.t - 6} y2={H - pad.b} stroke="url(#budget-line)" strokeWidth={1.5} />
             <g transform={`translate(0, ${pad.t - 20})`}>
-              <rect x={-38} y={-11} width={76} height={22} rx={11} fill="#ffb224" />
-              <text textAnchor="middle" dy="0.34em" className="tnum fill-ink text-[11.5px] font-semibold">
+              <rect x={-40} y={-11} width={80} height={22} rx={11} fill="var(--ink)" />
+              <text textAnchor="middle" dy="0.34em" className="tnum fill-bg text-[11.5px] font-semibold">
                 {n0(budget)} €
               </text>
             </g>
@@ -304,7 +304,7 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
               transition={spring}
               r={5}
               fill={REGIME_META[r].color}
-              stroke="var(--color-panel)"
+              stroke="var(--surface)"
               strokeWidth={2.5}
             />
           ))}
@@ -316,7 +316,7 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
               x2={x(hoverX)}
               y1={pad.t}
               y2={H - pad.b}
-              stroke="rgb(255 255 255 / 0.25)"
+              stroke="var(--line-strong)"
               strokeDasharray="3 3"
               pointerEvents="none"
             />
@@ -331,20 +331,20 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="pointer-events-none absolute top-10 z-10 min-w-52 rounded-2xl border border-line-strong bg-panel-2/95 p-3 shadow-2xl backdrop-blur"
+            className="pointer-events-none absolute top-10 z-10 min-w-52 rounded-2xl border border-line-strong bg-surface/95 p-3 shadow-2xl backdrop-blur"
             style={tipOnLeft ? { right: W - tipLeft + 14 } : { left: tipLeft + 14 }}
           >
-            <div className="tnum mb-2 text-xs text-fg-3">
+            <div className="tnum mb-2 text-xs text-ink-3">
               {n0(hoverPoint.x)} € в год · клик — выбрать
             </div>
             <ul className="space-y-1">
               {tooltipItems.map(({ r, v }) => (
                 <li key={r} className="flex items-center justify-between gap-4 text-[13px]">
-                  <span className="flex items-center gap-2 text-fg-2">
+                  <span className="flex items-center gap-2 text-ink-2">
                     <span className="size-2 rounded-full" style={{ background: REGIME_META[r].color }} />
                     {REGIME_META[r].short}
                   </span>
-                  <span className="tnum font-medium text-fg">{fmtValue(mode, v)}</span>
+                  <span className="tnum font-medium text-ink">{fmtValue(mode, v)}</span>
                 </li>
               ))}
             </ul>

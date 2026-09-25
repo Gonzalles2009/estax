@@ -24,14 +24,14 @@ function Amount({ step }: { step: Step }) {
     <span
       className={`tnum whitespace-nowrap text-right ${
         step.kind === "result"
-          ? "text-base font-semibold text-fg"
+          ? "text-base font-semibold text-ink"
           : strong
-            ? "font-semibold text-fg"
+            ? "font-semibold text-ink"
             : step.kind === "info"
-              ? "text-fg-3"
+              ? "text-ink-3"
               : step.kind === "plus"
-                ? "text-[#7fd6b4]"
-                : "text-fg-2"
+                ? "text-r-sl_safe"
+                : "text-ink-2"
       }`}
     >
       {sign}
@@ -51,7 +51,7 @@ function SourceChip({ id }: { id: string }) {
       target="_blank"
       rel="noreferrer"
       title={src.title}
-      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-line px-1.5 py-px text-[10px] font-medium text-fg-3 transition hover:border-sun/50 hover:text-sun"
+      className="inline-flex shrink-0 items-center gap-1 rounded-md border border-line px-1.5 py-px text-[10px] font-medium text-ink-3 transition hover:border-accent/50 hover:text-accent"
     >
       {src.short}
       <svg viewBox="0 0 12 12" className="size-2.5" aria-hidden>
@@ -66,7 +66,9 @@ export function Trace({ results }: { results: RegimeResult[] }) {
     useShallow((s) => ({ selected: s.selected, focus: s.focus, set: s.set })),
   );
   const tabs = REGIME_IDS.filter((id) => selected.includes(id));
-  const current = tabs.includes(focus) ? focus : tabs[0];
+  // Как в потоке денег: выбранный пользователем режим или лучший
+  const best = results.filter((x) => selected.includes(x.regime)).sort((a, b) => b.netAnnual - a.netAnnual)[0];
+  const current = focus && tabs.includes(focus) ? focus : best.regime;
   const r = results.find((x) => x.regime === current)!;
 
   return (
@@ -81,13 +83,13 @@ export function Trace({ results }: { results: RegimeResult[] }) {
               aria-selected={active}
               onClick={() => set({ focus: id })}
               className={`relative shrink-0 rounded-full px-3.5 py-2 text-sm transition-colors ${
-                active ? "text-fg" : "text-fg-3 hover:text-fg-2"
+                active ? "text-ink" : "text-ink-3 hover:text-ink-2"
               }`}
             >
               {active && (
                 <motion.span
                   layoutId="trace-tab"
-                  className="absolute inset-0 rounded-full border border-line-strong bg-white/[0.06]"
+                  className="absolute inset-0 rounded-full border border-line-strong bg-ink/[0.06]"
                   transition={{ type: "spring", stiffness: 400, damping: 34 }}
                 />
               )}
@@ -113,10 +115,10 @@ export function Trace({ results }: { results: RegimeResult[] }) {
             const steps = r.steps.filter((s) => s.group === g.id);
             if (!steps.length) return null;
             return (
-              <section key={g.id} className="rounded-2xl border border-line bg-white/[0.02] p-4">
+              <section key={g.id} className="rounded-2xl border border-line bg-ink/[0.02] p-4">
                 <header className="mb-3 flex items-baseline justify-between">
-                  <h3 className="text-sm font-semibold text-fg">{g.title}</h3>
-                  <span className="text-[11px] text-fg-3">{g.hint}</span>
+                  <h3 className="text-sm font-semibold text-ink">{g.title}</h3>
+                  <span className="text-[11px] text-ink-3">{g.hint}</span>
                 </header>
                 <ol className="space-y-0.5">
                   {steps.map((s, i) => (
@@ -127,7 +129,7 @@ export function Trace({ results }: { results: RegimeResult[] }) {
                       transition={{ delay: gi * 0.08 + i * 0.03 }}
                       className={`flex items-start justify-between gap-3 rounded-lg px-2 py-1.5 ${
                         s.kind === "result"
-                          ? "mt-2 bg-white/[0.06]"
+                          ? "mt-2 bg-ink/[0.06]"
                           : s.kind === "subtotal"
                             ? "border-t border-line pt-2"
                             : ""
@@ -135,12 +137,12 @@ export function Trace({ results }: { results: RegimeResult[] }) {
                     >
                       <span className="min-w-0">
                         <span className="flex flex-wrap items-center gap-1.5">
-                          <span className={`text-[13px] ${s.kind === "info" ? "text-fg-3" : "text-fg-2"}`}>
+                          <span className={`text-[13px] ${s.kind === "info" ? "text-ink-3" : "text-ink-2"}`}>
                             {s.label}
                           </span>
                           {s.source && <SourceChip id={s.source} />}
                         </span>
-                        {s.note && <span className="mt-0.5 block text-[11px] leading-snug text-fg-3">{s.note}</span>}
+                        {s.note && <span className="mt-0.5 block text-[11px] leading-snug text-ink-3">{s.note}</span>}
                       </span>
                       <Amount step={s} />
                     </motion.li>
@@ -161,7 +163,7 @@ export function Trace({ results }: { results: RegimeResult[] }) {
           className="mt-6 grid gap-3 md:grid-cols-2"
         >
           {r.notes.map((n) => (
-            <li key={n} className="flex gap-3 rounded-2xl border border-line p-4 text-[13px] leading-relaxed text-fg-2">
+            <li key={n} className="flex gap-3 rounded-2xl border border-line p-4 text-[13px] leading-relaxed text-ink-2">
               <span className="mt-1 size-1.5 shrink-0 rounded-full" style={{ background: REGIME_META[current].color }} />
               {n}
             </li>

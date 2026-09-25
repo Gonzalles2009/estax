@@ -1,10 +1,11 @@
-const eur0 = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 });
-const eur2 = new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// useGrouping: "always" — чтобы 1 328 и 13 280 выглядели одинаково (по умолчанию ru-RU не делит четырёхзначные)
+const eur0 = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0, useGrouping: "always" });
+const eur2 = new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: "always" });
 
 /** 12 345 */
-export const n0 = (x: number) => eur0.format(Math.round(x)).replace(/ /g, " ");
+export const n0 = (x: number) => eur0.format(Math.round(x));
 /** 12 345,67 */
-export const n2 = (x: number) => eur2.format(x).replace(/ /g, " ");
+export const n2 = (x: number) => eur2.format(x);
 /** 12 345 € */
 export const eur = (x: number) => `${n0(x)} €`;
 /** +1 234 € / −1 234 € */
