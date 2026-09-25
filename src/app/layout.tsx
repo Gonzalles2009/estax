@@ -4,8 +4,8 @@ import { GeistMono } from "geist/font/mono";
 import { Providers } from "@/components/site/Providers";
 import "./globals.css";
 
+// metadataBase не задаём: на Vercel Next.js сам берёт адрес деплоя (VERCEL_PROJECT_PRODUCTION_URL / VERCEL_BRANCH_URL)
 export const metadata: Metadata = {
-  metadataBase: new URL("https://estax.vercel.app"),
   title: {
     default: "EsTax·26 — честный калькулятор налогов Испании 2026",
     template: "%s · EsTax·26",
