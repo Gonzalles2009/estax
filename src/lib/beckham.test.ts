@@ -102,3 +102,22 @@ describe("проверка Ley Beckham", () => {
     for (const c of cases) for (const s of beckhamVerdict(c).sources) expect(SOURCES).toHaveProperty(s);
   });
 });
+
+describe("переезд до 2023 года — прежняя редакция art. 93", () => {
+  it("10 лет без резидентства и вопрос об этом", () => {
+    const a: BeckhamAnswers = { arrival: "2022", prior: null, basis: null, filed: null };
+    expect(visibleQuestions(a).find((q) => q.key === "prior")?.title).toContain("10 лет");
+    expect(visibleQuestions({ ...a, arrival: "2024" }).find((q) => q.key === "prior")?.title).toContain("5 лет");
+    expect(beckhamVerdict({ ...a, prior: "yes" }).title).toContain("10 лет");
+  });
+
+  it("удалёнка, ENISA, стартап и семья до 2023 года не подходят; контракт и перевод — да", () => {
+    for (const basis of ["remote", "enisa", "startup", "family"] as const) {
+      expect(beckhamVerdict({ arrival: "2021", prior: "no", basis, filed: "yes" }).status).toBe("no");
+      expect(beckhamVerdict({ arrival: "2023", prior: "no", basis, filed: "yes" }).status).not.toBe("no");
+    }
+    expect(beckhamVerdict({ arrival: "2022", prior: "no", basis: "hire", filed: "yes" })).toMatchObject({ status: "yes", until: 2027 });
+    expect(beckhamVerdict({ arrival: "2021", prior: "no", basis: "transfer", filed: "yes" }).status).toBe("yes");
+    expect(beckhamVerdict({ arrival: "2022", prior: "no", basis: "admin", filed: "yes" }).status).toBe("maybe");
+  });
+});

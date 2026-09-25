@@ -1,6 +1,14 @@
 import type { Breakdown, Inputs, RegimeId, RegimeResult, Step } from "./types";
 import { P } from "./params-2026";
-import { applyScale, computeIrpf, jointReduction, smiDeduction, workIncomeReduction } from "./irpf";
+import {
+  applyScale,
+  computeIrpf,
+  familyDeduction,
+  jointReduction,
+  rentasBajasReduction,
+  smiDeduction,
+  workIncomeReduction,
+} from "./irpf";
 import {
   EMPLOYEE_RATE,
   EMPLOYER_RATE,
@@ -52,6 +60,8 @@ interface WageTax {
   kind: IncomeKind;
   rnPrevio: number;
   reduction: number;
+  /** art. 32.2.3º — только для дохода от деятельности (socio SL) */
+  rentasBajas: number;
   /** 2 000 € «otros gastos» (trabajo) или 5% gastos de difícil justificación (actividad) */
   fixedDeduction: number;
   rn: number;
@@ -83,7 +93,8 @@ function wageTax(grossWork: number, ssDeductible: number, dividends: number, inp
     kind === "trabajo"
       ? Math.min(P.irpf.otrosGastosTrabajo, rnPrevio)
       : Math.min(P.irpf.dificilJustificacion.cap, rnPrevio * P.irpf.dificilJustificacion.rate);
-  const rn = Math.max(0, rnPrevio - fixedDeduction - reduction);
+  const rentasBajas = kind === "actividad" ? rentasBajasReduction(rnPrevio - fixedDeduction, dividends) : 0;
+  const rn = Math.max(0, rnPrevio - fixedDeduction - reduction - rentasBajas);
   const joint = jointReduction(inputs.family, inputs.children);
   const jointGeneral = Math.min(joint, rn);
   const blg = rn - jointGeneral;
@@ -101,6 +112,7 @@ function wageTax(grossWork: number, ssDeductible: number, dividends: number, inp
     kind,
     rnPrevio,
     reduction,
+    rentasBajas,
     fixedDeduction,
     rn,
     joint,
@@ -211,6 +223,7 @@ function wageBaseSteps(t: WageTax, grossLabel: string, gross: number, ssLabel: s
           source: "lirpf_30",
         },
   );
+  if (t.rentasBajas > 0) steps.push(rentasBajasStep(t.rentasBajas));
   if (t.joint > 0) {
     steps.push({
       group: "base",
@@ -222,6 +235,64 @@ function wageBaseSteps(t: WageTax, grossLabel: string, gross: number, ssLabel: s
   }
   steps.push({ group: "base", label: "Base liquidable general", amount: t.blg, kind: "subtotal" });
   return steps;
+}
+
+function rentasBajasStep(amount: number): Step {
+  return {
+    group: "base",
+    label: "Reducción por rentas bajas",
+    amount: -amount,
+    kind: "minus",
+    note: "art. 32.2.3º: при доходах до 12 000 € — до 1 620 €",
+    source: "lirpf_32",
+  };
+}
+
+interface FamilyCredit {
+  amount: number;
+  label: string;
+  /** IRPF к уплате после вычета */
+  general: number;
+  savings: number;
+  /** Часть вычета сверх налога — Hacienda её выплачивает */
+  benefit: number;
+}
+
+/** Вычет art. 81 bis уменьшает cuota diferencial: сначала общую часть, затем сбережения, остаток — выплата */
+function familyCredit(inputs: Inputs, general: number, savings: number, ssTotal: number): FamilyCredit {
+  const d = familyDeduction(inputs.family, inputs.children, ssTotal);
+  const fromGeneral = Math.min(d.amount, Math.max(0, general));
+  const fromSavings = Math.min(d.amount - fromGeneral, Math.max(0, savings));
+  return {
+    amount: d.amount,
+    label: d.label,
+    general: general - fromGeneral,
+    savings: savings - fromSavings,
+    benefit: d.amount - fromGeneral - fromSavings,
+  };
+}
+
+function familySteps(fc: FamilyCredit): Step[] {
+  if (fc.amount <= 0) return [];
+  return [
+    {
+      group: "tax",
+      label: `Вычет art. 81 bis — ${fc.label}`,
+      amount: fc.amount,
+      kind: "plus",
+      note:
+        fc.benefit > 0.5
+          ? `Больше налога: ${fmt(fc.benefit)} € Hacienda выплатит — можно получать заранее помесячно`
+          : "Уменьшает налог к уплате; можно получать заранее помесячно",
+      source: "lirpf_81bis",
+    },
+  ];
+}
+
+function benefitFlowStep(fc: FamilyCredit): Step[] {
+  return fc.benefit > 0.5
+    ? [{ group: "flow", label: "Выплата Hacienda (вычет art. 81 bis сверх налога)", amount: fc.benefit, kind: "plus", source: "lirpf_81bis" }]
+    : [];
 }
 
 /* ───────────────────────── 1. Наёмный работник ───────────────────────── */
@@ -236,7 +307,9 @@ function employee(inputs: Inputs): RegimeResult {
   const t = wageTax(gross, ss.employee, 0, inputs, "trabajo");
   const expenses = inputs.workExpenses * 12;
   const employer = inputs.employeeBasis === "cost" ? inputs.budget - gross : 0;
-  const net = gross - ss.employee - t.general - expenses;
+  // Лимит art. 81 bis — cotizaciones totales: доля работника + работодателя
+  const fc = familyCredit(inputs, t.general, 0, ss.employee + ss.employer);
+  const net = gross - ss.employee - fc.general - expenses + fc.benefit;
 
   const steps: Step[] = [];
   if (inputs.employeeBasis === "cost") {
@@ -266,11 +339,13 @@ function employee(inputs: Inputs): RegimeResult {
         : undefined,
       source: "orden_2026",
     },
-    { group: "flow", label: "IRPF", amount: -t.general, kind: "minus", source: "lirpf" },
+    { group: "flow", label: "IRPF", amount: -fc.general, kind: "minus", source: "lirpf" },
+    ...benefitFlowStep(fc),
     { group: "flow", label: "Рабочие расходы", amount: -expenses, kind: "minus" },
     { group: "flow", label: "Остаётся вам", amount: net, kind: "result" },
     ...wageBaseSteps(t, "Брутто-зарплата", gross, "Взносы работника в SS", ss.employee),
     ...irpfSteps(t, inputs, { withSavings: false }),
+    ...familySteps(fc),
   );
 
   const notes = [
@@ -282,7 +357,7 @@ function employee(inputs: Inputs): RegimeResult {
       `Сверху работодатель платит ещё ≈${fmt(employeeSS(gross).employer)} € взносов — для честного сравнения с autónomo переключитесь на «бюджет работодателя».`,
     );
   }
-  if (gross < P.ss.minBaseMonthly * 12) {
+  if (gross < P.ss.smiAnnual) {
     notes.unshift("Брутто ниже минимальной зарплаты (SMI) — на полный день так платить нельзя.");
   }
 
@@ -291,7 +366,8 @@ function employee(inputs: Inputs): RegimeResult {
     inputs,
     {
       net,
-      irpf: t.general,
+      irpf: fc.general,
+      benefit: fc.benefit,
       dividendTax: 0,
       corporateTax: 0,
       ssWorker: ss.employee,
@@ -417,8 +493,10 @@ function autonomo(inputs: Inputs, firstYear: boolean): RegimeResult {
   const rnPrevio = beforeQuota - quota;
   const difJ = difJOf(rnPrevio);
   const rn = rnPrevio - difJ;
-  const inicio = firstYear && rn > 0 ? Math.min(rn, P.irpf.inicioActividad.cap) * P.irpf.inicioActividad.rate : 0;
-  const rnReduced = rn - inicio;
+  const rentasBajas = rentasBajasReduction(rn);
+  const rnLow = rn - rentasBajas;
+  const inicio = firstYear && rnLow > 0 ? Math.min(rnLow, P.irpf.inicioActividad.cap) * P.irpf.inicioActividad.rate : 0;
+  const rnReduced = rnLow - inicio;
   const joint = jointReduction(inputs.family, inputs.children);
   const blg = Math.max(0, rnReduced - joint);
   const irpf = computeIrpf({
@@ -429,7 +507,8 @@ function autonomo(inputs: Inputs, firstYear: boolean): RegimeResult {
     children: inputs.children,
     childrenUnder3: inputs.childrenUnder3,
   });
-  const net = revenue - expenses - gestoria - quota - irpf.general;
+  const fc = familyCredit(inputs, irpf.general, 0, quota);
+  const net = revenue - expenses - gestoria - quota - fc.general + fc.benefit;
 
   const steps: Step[] = [
     { group: "flow", label: "Выручка без IVA", amount: revenue, kind: "start" },
@@ -452,7 +531,8 @@ function autonomo(inputs: Inputs, firstYear: boolean): RegimeResult {
           note: `Трамо «${reta.tramo}»: ${fmt(computable)} €/мес дохода → база ${fmt(reta.base)} € × ${pct(P.ss.reta.rate)}`,
           source: "lgss_308",
         },
-    { group: "flow", label: "IRPF", amount: -irpf.general, kind: "minus", source: "lirpf" },
+    { group: "flow", label: "IRPF", amount: -fc.general, kind: "minus", source: "lirpf" },
+    ...benefitFlowStep(fc),
     { group: "flow", label: "Остаётся вам", amount: net, kind: "result" },
 
     { group: "base", label: "Доходы − расходы − cuota", amount: rnPrevio, kind: "start", source: "lirpf_30" },
@@ -464,6 +544,7 @@ function autonomo(inputs: Inputs, firstYear: boolean): RegimeResult {
       source: "lirpf_30",
     },
   ];
+  if (rentasBajas > 0) steps.push(rentasBajasStep(rentasBajas));
   if (inicio > 0) {
     steps.push({
       group: "base",
@@ -484,12 +565,12 @@ function autonomo(inputs: Inputs, firstYear: boolean): RegimeResult {
     });
   }
   steps.push({ group: "base", label: "Base liquidable general", amount: blg, kind: "subtotal" });
-  steps.push(...irpfSteps({ irpf, smi: 0, savings: 0 }, inputs, { withSavings: false }));
+  steps.push(...irpfSteps({ irpf, smi: 0, savings: 0 }, inputs, { withSavings: false }), ...familySteps(fc));
 
   const notes = firstYear
     ? [
         "Сценарий первого года: tarifa plana 80 €/мес действует 12 месяцев, затем cuota считается по доходу.",
-        "Скидка 20% по IRPF — в первый год с прибылью и следующий, если за предыдущий год деятельности не было.",
+        "Скидка 20% по IRPF — в первый год с прибылью и следующий, если за предыдущий год деятельности не было и если больше половины дохода не приходит от прошлогоднего работодателя (art. 32.3 LIRPF).",
         "Смотрите обычный Autónomo — это ваш второй и последующие годы.",
       ]
     : [
@@ -501,7 +582,7 @@ function autonomo(inputs: Inputs, firstYear: boolean): RegimeResult {
   return result(
     firstYear ? "autonomo_new" : "autonomo",
     inputs,
-    { net, irpf: irpf.general, dividendTax: 0, corporateTax: 0, ssWorker: quota, ssEmployer: 0, expenses, gestoria },
+    { net, irpf: fc.general, benefit: fc.benefit, dividendTax: 0, corporateTax: 0, ssWorker: quota, ssEmployer: 0, expenses, gestoria },
     steps,
     notes,
     { retaMonthly: quotaMonthly, retaTramo: firstYear ? "Tarifa plana" : reta.tramo },
@@ -523,6 +604,7 @@ interface SlEval {
   is: number;
   dividends: number;
   wage: WageTax;
+  fc: FamilyCredit;
   net: number;
   retaTramo: string;
   retaBase: number;
@@ -536,7 +618,8 @@ function evalSl(inputs: Inputs, salaryTarget: number, minRemuneration: number): 
   const revenue = inputs.budget;
   const pre = revenue - inputs.workExpenses * 12 - inputs.gestoriaSl * 12;
 
-  let quota = P.ss.reta.societarioMinBase * P.ss.reta.rate * 12;
+  // Новая SL: socio впервые в RETA получает tarifa plana (art. 38 ter.9 LETA) на первые 12 месяцев
+  let quota = inputs.slNewCompany ? P.ss.reta.tarifaPlanaMonthly * 12 : P.ss.reta.societarioMinBase * P.ss.reta.rate * 12;
   let salary = 0;
   let profit = 0;
   let is = 0;
@@ -549,6 +632,10 @@ function evalSl(inputs: Inputs, salaryTarget: number, minRemuneration: number): 
     profit = pre - salary - quota;
     is = corporateTax(profit, inputs.slNewCompany);
     dividends = Math.max(0, profit - is);
+    if (inputs.slNewCompany) {
+      tramo = "Tarifa plana";
+      break;
+    }
     // Рендимьенто socio: вознаграждение (+ cuota, оплаченная компанией, которая добавляется обратно)
     // минус 5% difícil justificación, плюс дивиденды íntegros; затем −3% (art. 308.1.c LGSS)
     const difJ = Math.min(P.irpf.dificilJustificacion.cap, salary * P.irpf.dificilJustificacion.rate);
@@ -563,8 +650,9 @@ function evalSl(inputs: Inputs, salaryTarget: number, minRemuneration: number): 
     quota = i > 6 ? Math.max(next, quota) : next;
   }
   const wage = wageTax(salary + quota, quota, dividends, inputs, "actividad");
-  const net = salary + dividends - wage.general - wage.savings + Math.min(0, profit);
-  return { salary, quota, profit, is, dividends, wage, net, retaTramo: tramo, retaBase: base };
+  const fc = familyCredit(inputs, wage.general, wage.savings, quota);
+  const net = salary + dividends - fc.general - fc.savings + fc.benefit + Math.min(0, profit);
+  return { salary, quota, profit, is, dividends, wage, fc, net, retaTramo: tramo, retaBase: base };
 }
 
 function bestSl(inputs: Inputs, minRemuneration: number): SlEval {
@@ -607,14 +695,23 @@ function sl(inputs: Inputs, safe: boolean): RegimeResult {
     { group: "flow", label: "Выручка компании без IVA", amount: inputs.budget, kind: "start" },
     { group: "flow", label: "Рабочие расходы", amount: -expenses, kind: "minus", source: "lis" },
     { group: "flow", label: "Гестория, годовой отчёт, регистры", amount: -gestoria, kind: "minus", source: "lis" },
-    {
-      group: "flow",
-      label: `Cuota autónomo societario — ${fmt(e.quota / 12)} €/мес`,
-      amount: -e.quota,
-      kind: "minus",
-      note: `Считается от вознаграждения + дивидендов (трамо «${e.retaTramo}»); с 2026 минимальная база для societarios — ${fmt(P.ss.reta.societarioMinBase)} €`,
-      source: "lgss_308",
-    },
+    inputs.slNewCompany
+      ? {
+          group: "flow",
+          label: `Cuota autónomo societario — tarifa plana ${n2(P.ss.reta.tarifaPlanaMonthly)} €/мес`,
+          amount: -e.quota,
+          kind: "minus",
+          note: "80 € + MEI первые 12 месяцев, если вы не были в RETA два года (art. 38 ter.9 LETA)",
+          source: "leta_38ter",
+        }
+      : {
+          group: "flow",
+          label: `Cuota autónomo societario — ${fmt(e.quota / 12)} €/мес`,
+          amount: -e.quota,
+          kind: "minus",
+          note: `Считается от вознаграждения + дивидендов (трамо «${e.retaTramo}»); с 2026 минимальная база для societarios — ${fmt(P.ss.reta.societarioMinBase)} €`,
+          source: "lgss_308",
+        },
     {
       group: "flow",
       label: "Вознаграждение вам за работу",
@@ -637,12 +734,13 @@ function sl(inputs: Inputs, safe: boolean): RegimeResult {
     {
       group: "flow",
       label: "IRPF с вознаграждения",
-      amount: -e.wage.general,
+      amount: -e.fc.general,
       kind: "minus",
       note: "Доход от деятельности socio profesional (art. 27.1 LIRPF), а не зарплата",
       source: "lirpf",
     },
-    { group: "flow", label: "IRPF с дивидендов", amount: -e.wage.savings, kind: "minus", source: "lirpf_66" },
+    { group: "flow", label: "IRPF с дивидендов", amount: -e.fc.savings, kind: "minus", source: "lirpf_66" },
+    ...benefitFlowStep(e.fc),
     { group: "flow", label: "Остаётся вам", amount: e.net, kind: "result" },
     ...wageBaseSteps(
       e.wage,
@@ -653,13 +751,14 @@ function sl(inputs: Inputs, safe: boolean): RegimeResult {
     ),
     { group: "base", label: "Base del ahorro (дивиденды)", amount: e.wage.bla, kind: "subtotal", source: "lirpf_66" },
     ...irpfSteps(e.wage, inputs, { withSavings: true }),
+    ...familySteps(e.fc),
   ];
 
   const notes = safe
     ? [
         `Вознаграждение вам ≥ 75% результата до него и ≥ ${fmt(P.socioProfesional.minAbsolute)} € (5 × IPREM) — «безопасная гавань» art. 18.6 LIS для профессиональных услуг, куда входит IT (IAE 763). В этих рамках калькулятор подбирает лучшее соотношение вознаграждения и дивидендов.`,
         "Ваше вознаграждение облагается как доход от деятельности (art. 27.1 LIRPF): вы в RETA, работаете в своей же компании. С него удерживается 15% (7% в первые годы).",
-        "Ставка 15% для новых компаний не положена, если ту же работу вы в прошлом году делали как autónomo (art. 29.1.b LIS).",
+        "Ставка 15% для новых компаний не положена, если ту же работу вы в прошлом году делали как autónomo (art. 29.1.b LIS); tarifa plana — если вы были в RETA в последние два года.",
         "Деньги можно не выводить: оставленная в компании прибыль не облагается налогом на дивиденды, пока вы её не распределите.",
       ]
     : [
@@ -672,8 +771,9 @@ function sl(inputs: Inputs, safe: boolean): RegimeResult {
     inputs,
     {
       net: e.net,
-      irpf: e.wage.general,
-      dividendTax: e.wage.savings,
+      irpf: e.fc.general,
+      benefit: e.fc.benefit,
+      dividendTax: e.fc.savings,
       corporateTax: e.is,
       ssWorker: e.quota,
       ssEmployer: 0,

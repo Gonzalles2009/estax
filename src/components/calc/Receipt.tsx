@@ -36,6 +36,7 @@ const SHORT: [RegExp, string][] = [
   [/^Impuesto sobre Sociedades.*/, "Налог на прибыль"],
   [/^Дивиденды.*/, "Дивиденды"],
   [/^Вознаграждение \+ дивиденды.*/, "Вам до IRPF"],
+  [/^Выплата Hacienda.*/, "Выплата Hacienda (81 bis)"],
 ];
 const shortLabel = (label: string) => SHORT.find(([re]) => re.test(label))?.[1] ?? label;
 
@@ -87,7 +88,7 @@ function ReceiptPaper({ r, url }: { r: RegimeResult; url: string }) {
             <Line
               key={i}
               label={shortLabel(st.label)}
-              value={`${st.kind === "minus" && st.amount < -0.005 ? "−" : ""}${n2(Math.abs(st.amount))}`}
+              value={`${st.kind === "minus" && st.amount < -0.005 ? "−" : st.kind === "plus" && st.amount > 0.005 ? "+" : ""}${n2(Math.abs(st.amount))}`}
               strong={st.kind === "start" || st.kind === "subtotal"}
             />
           ),
