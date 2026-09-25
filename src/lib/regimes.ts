@@ -37,7 +37,7 @@ export const REGIME_META: Record<RegimeId, RegimeMeta> = {
   sl_safe: {
     name: "Своя SL",
     short: "SL",
-    tagline: "Зарплата ≥ 75% + дивиденды, по правилам art. 18.6 LIS",
+    tagline: "Вознаграждение ≥ 75% + дивиденды (art. 18.6 LIS)",
     color: "var(--color-r-sl_safe)",
   },
   sl_optimal: {
