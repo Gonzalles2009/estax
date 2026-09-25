@@ -54,7 +54,8 @@ export interface Inputs {
    */
   slTarifaPlana: boolean;
   /**
-   * Одинокий родитель не получает алименты на детей — условие вычета 1 200 € при двух детях (art. 81 bis.1.c).
+   * У одинокого родителя нет права на алименты на детей (не «не платят», а нет права) — условие вычета
+   * 1 200 € при двух детях (art. 81 bis.1.c: «sin derecho a percibir anualidades por alimentos»).
    */
   noAlimony: boolean;
 }

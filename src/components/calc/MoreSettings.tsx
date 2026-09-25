@@ -96,8 +96,8 @@ export function MoreSettings({ bare = false }: { bare?: boolean }) {
             <Switch
               checked={s.noAlimony}
               onChange={(v) => s.set({ noAlimony: v })}
-              label="Не получаю алименты на детей"
-              hint="Одинокому родителю с 2 детьми без права на алименты положен вычет 1 200 € в год (art. 81 bis LIRPF)."
+              label="Нет права на алименты на детей"
+              hint="Одинокому родителю с 2 детьми, у которого нет права на алименты, положен вычет 1 200 € в год (art. 81 bis LIRPF). Если право есть, но алименты не платят, — вычета нет."
             />
           </div>
         )}

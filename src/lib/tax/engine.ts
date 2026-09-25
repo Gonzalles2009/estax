@@ -275,7 +275,7 @@ function familyCredit(inputs: Inputs, general: number, savings: number, ssTotal:
 /** Подсказка одинокому родителю с 2 детьми: вычет 81 bis зависит от алиментов, которых калькулятор не знает */
 function familyNotes(inputs: Inputs): string[] {
   return inputs.family === "single" && inputs.children === 2 && !inputs.noAlimony
-    ? ["Одинокому родителю с 2 детьми, который не получает на них алименты, положен вычет 1 200 € (art. 81 bis) — отметьте это в «Ещё параметры»."]
+    ? ["Одинокому родителю с 2 детьми, у которого нет права на алименты на них, положен вычет 1 200 € (art. 81 bis) — отметьте это в «Ещё параметры»."]
     : [];
 }
 
