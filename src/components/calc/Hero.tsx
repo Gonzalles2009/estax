@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { BUDGET_MAX, BUDGET_MIN, useCalc } from "@/store/calc";
 import { REGION_ORDER, REGIONS } from "@/lib/tax/regions-2026";
@@ -9,6 +9,9 @@ import type { Family, RegionId } from "@/lib/tax/types";
 import { P } from "@/lib/tax/params-2026";
 import { n0 } from "@/lib/format";
 import { Stepper } from "@/components/ui/controls";
+import { InlinePicker, type PickerOption } from "@/components/ui/Picker";
+import { calculate } from "@/lib/tax/engine";
+import { useInputs } from "./useResults";
 import { Azulejo } from "@/components/site/Background";
 import { MoreSettings } from "./MoreSettings";
 import { useCurrentRegime } from "./FlowSection";
@@ -34,52 +37,15 @@ const FAMILY_LABEL: Record<Family, string> = {
   couple_joint: "в паре, супруг(а) без дохода",
 };
 
-const PRESETS = [30000, 45000, 60000, 80000, 100000, 150000];
+const FAMILY_HINT: Record<Family, string> = {
+  single: "Своя декларация; с детьми — совместная с ними (−2 150 € из базы)",
+  couple: "Каждый подаёт декларацию сам, минимум на детей делится пополам",
+  couple_joint: "Совместная декларация: −3 400 € из налоговой базы",
+};
 
-/** Нативный select поверх текста: подпись любой длины, системный выбор на телефоне */
-function InlineSelect<T extends string>({
-  value,
-  options,
-  onChange,
-  label,
-}: {
-  value: T;
-  options: { value: T; label: string }[];
-  onChange: (v: T) => void;
-  label: string;
-}) {
-  const current = options.find((o) => o.value === value)?.label ?? "";
-  return (
-    <span className="inline-field relative inline-flex items-baseline gap-1 px-1 text-ink">
-      <AnimatePresence mode="popLayout" initial={false}>
-        <motion.span
-          key={current}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.25 }}
-        >
-          {current}
-        </motion.span>
-      </AnimatePresence>
-      <svg aria-hidden viewBox="0 0 20 20" className="size-[0.55em] self-center text-accent">
-        <path d="M5 8l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-      </svg>
-      <select
-        aria-label={label}
-        value={value}
-        onChange={(e) => onChange(e.target.value as T)}
-        className="absolute inset-0 cursor-pointer appearance-none opacity-0"
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </span>
-  );
-}
+const fmtRate = (r: number) => `${(r * 100).toLocaleString("ru-RU", { maximumFractionDigits: 2 })}%`;
+
+const PRESETS = [30000, 45000, 60000, 80000, 100000, 150000];
 
 function BudgetInput() {
   const budget = useCalc((s) => s.budget);
@@ -207,6 +173,36 @@ export function Hero({ results }: { results: RegimeResult[] }) {
     })),
   );
   const pos = budgetToPos(s.budget);
+  const { current } = useCurrentRegime(results);
+  const inputs = useInputs();
+
+  // В списках сразу видно, сколько останется в каждом варианте — для выбранного режима
+  const regionOptions = useMemo<PickerOption<RegionId>[]>(() => {
+    const here = calculate(current.regime, inputs).netMonthly;
+    return REGION_ORDER.map((id) => {
+      const r = REGIONS[id];
+      const net = calculate(current.regime, { ...inputs, region: id }).netMonthly;
+      const diff = net - here;
+      return {
+        value: id,
+        label: r.name,
+        hint: `IRPF региона ${fmtRate(r.scale[0][2])}–${fmtRate(r.scale[r.scale.length - 1][2])}${r.minimos ? " · свои минимумы" : ""}`,
+        aside: `${n0(net)} €`,
+        asideHint: id === inputs.region ? "сейчас" : Math.abs(diff) < 0.5 ? "так же" : `${diff > 0 ? "+" : "−"}${n0(Math.abs(diff))} €`,
+      };
+    });
+  }, [current.regime, inputs]);
+
+  const familyOptions = useMemo<PickerOption<Family>[]>(
+    () =>
+      (Object.keys(FAMILY_LABEL) as Family[]).map((f) => ({
+        value: f,
+        label: FAMILY_LABEL[f],
+        hint: FAMILY_HINT[f],
+        aside: `${n0(calculate(current.regime, { ...inputs, family: f }).netMonthly)} €`,
+      })),
+    [current.regime, inputs],
+  );
   const verified = new Date(P.verifiedAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
 
   return (
@@ -243,18 +239,22 @@ export function Hero({ results }: { results: RegimeResult[] }) {
         <p className="serif text-[26px] leading-[1.55] text-ink-2 sm:text-[34px] sm:leading-[1.5]">
           {s.basis === "cost" ? "Моя работа стоит компании или клиентам " : "Моя зарплата брутто — "}
           <BudgetInput /> в год. Живу в&nbsp;
-          <InlineSelect<RegionId>
+          <InlinePicker<RegionId>
             label="Регион"
+            title="Регион проживания"
             value={s.region}
             onChange={(v) => s.set({ region: v })}
-            options={REGION_ORDER.map((id) => ({ value: id, label: REGIONS[id].name }))}
+            options={regionOptions}
+            footer={<span className="text-[11px] text-ink-3">{REGIME_META[current.regime].short} · €/мес</span>}
           />
           ,{" "}
-          <InlineSelect<Family>
+          <InlinePicker<Family>
             label="Семья"
+            title="Семья и декларация"
             value={s.family}
             onChange={(v) => s.set({ family: v })}
-            options={(Object.keys(FAMILY_LABEL) as Family[]).map((f) => ({ value: f, label: FAMILY_LABEL[f] }))}
+            options={familyOptions}
+            footer={<span className="text-[11px] text-ink-3">{REGIME_META[current.regime].short} · €/мес</span>}
           />
           , детей —{" "}
           <span className="inline-field inline-flex px-1 text-ink">
