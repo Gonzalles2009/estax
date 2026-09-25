@@ -13,6 +13,9 @@ export function MoreSettings({ bare = false }: { bare?: boolean }) {
       gestoriaAutonomo: st.gestoriaAutonomo,
       gestoriaSl: st.gestoriaSl,
       slNewCompany: st.slNewCompany,
+      slTarifaPlana: st.slTarifaPlana,
+      noAlimony: st.noAlimony,
+      singleWithTwo: st.family === "single" && st.children === 2,
       set: st.set,
     })),
   );
@@ -76,10 +79,28 @@ export function MoreSettings({ bare = false }: { bare?: boolean }) {
           <Switch
             checked={s.slNewCompany}
             onChange={(v) => s.set({ slNewCompany: v })}
-            label="SL — первый год новой компании"
-            hint="Налог на прибыль 15% (art. 29.1 LIS) и tarifa plana 80 € для вас как socio (art. 38 ter.9 LETA). Не положено, если ту же работу вы в прошлом году делали как autónomo или были в RETA последние два года."
+            label="SL — новая компания (налог на прибыль 15%)"
+            hint="Первый год с прибылью и следующий (art. 29.1 LIS). Не положено, если ту же работу вы в прошлом году делали как autónomo."
           />
         </div>
+        <div className="@xl:col-span-2">
+          <Switch
+            checked={s.slTarifaPlana}
+            onChange={(v) => s.set({ slTarifaPlana: v })}
+            label="SL — ваши первые 12 месяцев в RETA (tarifa plana 80 €)"
+            hint="Для socio, который не был в RETA последние два года (art. 38 ter.9 LETA). Для обычного autónomo то же самое — режим «Autónomo · первый год»."
+          />
+        </div>
+        {s.singleWithTwo && (
+          <div className="@xl:col-span-2">
+            <Switch
+              checked={s.noAlimony}
+              onChange={(v) => s.set({ noAlimony: v })}
+              label="Не получаю алименты на детей"
+              hint="Одинокому родителю с 2 детьми без права на алименты положен вычет 1 200 € в год (art. 81 bis LIRPF)."
+            />
+          </div>
+        )}
         <p className="text-xs text-ink-3 @xl:col-span-2">Страна Басков и Наварра не поддерживаются: у них собственный IRPF.</p>
       </div>
     </div>

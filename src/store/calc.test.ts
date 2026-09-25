@@ -28,3 +28,10 @@ describe("состояние в ссылке", () => {
     expect(fromQuery(toQuery(s)).beckham).toEqual(s.beckham);
   });
 });
+
+describe("новые флажки в ссылке", () => {
+  it("tarifa plana для SL и «без алиментов» сохраняются", () => {
+    const s = { ...DEFAULTS, slTarifaPlana: true, noAlimony: true };
+    expect(fromQuery(toQuery(s))).toMatchObject({ slTarifaPlana: true, noAlimony: true });
+  });
+});

@@ -17,6 +17,8 @@ const base: Inputs = {
   gestoriaAutonomo: 60,
   gestoriaSl: 180,
   slNewCompany: false,
+  slTarifaPlana: false,
+  noAlimony: false,
 };
 
 describe("шкалы", () => {
@@ -130,7 +132,8 @@ describe("режимы", () => {
     { employeeBasis: "gross" },
     { family: "couple_joint", children: 2, childrenUnder3: 1 },
     { family: "single", children: 1, region: "valencia" },
-    { region: "canarias", workExpenses: 600, slNewCompany: true },
+    { region: "canarias", workExpenses: 600, slNewCompany: true, slTarifaPlana: true },
+    { family: "single", children: 2, noAlimony: true },
     { region: "cataluna", family: "couple", children: 3 },
   ];
 
@@ -213,7 +216,9 @@ describe("источники", () => {
 describe("находки проверки данных 25.09.2026", () => {
   test("art. 81 bis: многодетные и одинокий родитель с 2 детьми", () => {
     const big = 1e6;
-    expect(familyDeduction("single", 2, big).amount).toBe(1200);
+    // Одинокий родитель с 2 детьми — только без права на алименты
+    expect(familyDeduction("single", 2, big).amount).toBe(0);
+    expect(familyDeduction("single", 2, big, true).amount).toBe(1200);
     expect(familyDeduction("single", 1, big).amount).toBe(0);
     expect(familyDeduction("couple_joint", 2, big).amount).toBe(0);
     expect(familyDeduction("couple_joint", 3, big).amount).toBe(1200);
@@ -263,8 +268,10 @@ describe("находки проверки данных 25.09.2026", () => {
     expect(P.socioProfesional.minAbsolute).toBe(36000);
   });
 
-  test("новая SL: tarifa plana для socio (art. 38 ter.9 LETA)", () => {
-    const r = calculate("sl_safe", { ...base, slNewCompany: true, budget: 60000 });
+  test("tarifa plana для socio SL (art. 38 ter.9 LETA) — отдельно от ставки 15% новой компании", () => {
+    // Второй год с прибылью: IS 15%, но tarifa plana уже закончилась
+    expect(calculate("sl_safe", { ...base, slNewCompany: true, budget: 60000 }).meta.retaTramo).not.toBe("Tarifa plana");
+    const r = calculate("sl_safe", { ...base, slTarifaPlana: true, budget: 60000 });
     expect(r.breakdown.ssWorker).toBeCloseTo(P.ss.reta.tarifaPlanaMonthly * 12, 6);
     expect(r.meta.retaTramo).toBe("Tarifa plana");
     expect(calculate("sl_safe", { ...base, budget: 60000 }).breakdown.ssWorker).toBeGreaterThan(P.ss.reta.tarifaPlanaMonthly * 12);

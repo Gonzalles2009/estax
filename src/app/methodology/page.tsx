@@ -129,7 +129,7 @@ export default function Methodology() {
               <li>IRPF = гос. шкала + региональная, минус та же шкала от mínimo personal y familiar.</li>
               <li>Вычет для зарплат около SMI (DA 61ª): до 590,89 €.</li>
               <li>
-                Многодетным (от 3 детей) и одинокому родителю с 2 детьми — вычет art. 81 bis: 1 200 €, от 5 детей 2 400 €, +600 € за
+                Многодетным (от 3 детей) и одинокому родителю с 2 детьми без алиментов — вычет art. 81 bis: 1 200 €, от 5 детей 2 400 €, +600 € за
                 каждого ребёнка сверх минимума категории; если оба родителя работают — пополам. Он больше налога — разницу выплачивает
                 Hacienda. То же для autónomo и SL, но не для Beckham.
               </li>
@@ -167,7 +167,7 @@ export default function Methodology() {
               <li>Cuota societario считается от вознаграждения + дивидендов × 97%, минимальная база с 2026 года — {n2(P.ss.reta.societarioMinBase)} €.</li>
               <li>Прибыль облагается IS {rate(P.is.micro[0][2])} до 50 000 € и {rate(P.is.micro[1][2])} свыше (microempresa); остаток — дивиденды 19–30%.</li>
               <li>Ваше вознаграждение — доход от деятельности (art. 27.1 LIRPF): 5% difícil justificación, общая шкала.</li>
-              <li>Новая SL (переключатель): IS 15% (art. 29.1 LIS) и tarifa plana {n2(P.ss.reta.tarifaPlanaMonthly)} € для socio, если он не был в RETA два года (art. 38 ter.9 LETA).</li>
+              <li>Два независимых переключателя: новая SL — IS 15% в первый год с прибылью и следующий (art. 29.1 LIS); первые 12 месяцев socio в RETA — tarifa plana {n2(P.ss.reta.tarifaPlanaMonthly)} €, если он не был в RETA два года (art. 38 ter.9 LETA).</li>
               <li>«SL»: вознаграждение + cuota ≥ 75% результата и ≥ {n0(P.socioProfesional.minAbsolute)} € (art. 18.6 LIS). «SL агрессивно»: без этого ограничения. В обоих случаях калькулятор перебирает соотношение вознаграждения и дивидендов и берёт лучшее.</li>
             </ol>
           </Card>
