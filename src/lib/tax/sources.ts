@@ -60,6 +60,11 @@ export const SOURCES = {
     short: "LIRPF art. 93",
     url: "https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764#a93",
   },
+  lirpf_81bis: {
+    title: "LIRPF art. 81 bis — deducciones por familia numerosa o personas con discapacidad a cargo",
+    short: "LIRPF art. 81 bis",
+    url: "https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764#a81bis",
+  },
   rirpf_114: {
     title: "RIRPF arts. 113–120 — régimen de impatriados",
     short: "RIRPF art. 114",

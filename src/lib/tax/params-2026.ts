@@ -70,6 +70,20 @@ export const P = {
     inicioActividad: { rate: 0.2, cap: 100000 },
 
     /**
+     * art. 32.2.3º LIRPF: при rentas < 12 000 € RN деятельности уменьшается на 1 620 € (rentas ≤ 8 000 €),
+     * далее 1 620 − 0,405 × (rentas − 8 000).
+     */
+    rentasBajasActividad: { max: 1620, t1: 8000, t2: 12000, k: 0.405 },
+
+    /**
+     * art. 81 bis.1.c LIRPF — вычет из cuota diferencial (может дать выплату от Hacienda):
+     * 1 200 € многодетным (familia numerosa general — от 3 детей) и одинокому родителю с 2 детьми;
+     * special (от 5 детей) — +100%; +600 € за каждого ребёнка сверх минимума категории.
+     * Лимит — cotizaciones totales в SS, но надбавки (+100% и +600 €) под лимит не попадают.
+     */
+    familiaNumerosa: { base: 1200, extraChild: 600, generalMin: 3, especialMin: 5 },
+
+    /**
      * art. 93 LIRPF: база = брутто без вычетов (art. 24.1 TRLIRNR) — соцвзносы не вычитаются
      * (DGT V1112-25), 2 000 € и mínimos не применяются.
      */
@@ -84,8 +98,10 @@ export const P = {
   ss: {
     /** art. 3.1 RDL 3/2026, Orden PJC/297/2026 arts. 2–3 */
     maxBaseMonthly: 5101.2,
-    /** Grupos 4–7 = SMI 2026 (RD 126/2026: 1 221 € × 14) */
+    /** Grupos 4–7: 1 424,40 €/мес (Orden PJC/297/2026 art. 3; = 47,48 €/día × 30) */
     minBaseMonthly: 1424.4,
+    /** SMI 2026 в год: 1 221 € × 14 (RD 126/2026 art. 3.1) */
+    smiAnnual: 17094,
     /** Доля работника (contrato indefinido), Orden PJC/297/2026 */
     employee: { cc: 0.047, desempleo: 0.0155, fp: 0.001, mei: 0.0015 },
     /** Доля работодателя; AT/EP для CNAE 62 — 0,80 IT + 0,70 IMS (DA 61ª LGSS) */
@@ -146,8 +162,9 @@ export const P = {
   },
 
   /**
-   * art. 18.6 LIS — «безопасная гавань» для socio profesional: вознаграждение ≥ 75% результата до него
-   * и ≥ 5 × IPREM (DA 90ª Ley 31/2022: 600 €/мес; 7 200 € буквально, 8 400 € с 14 выплатами — берём консервативно).
+   * art. 18.6.c LIS — «безопасная гавань» для socio profesional: вознаграждение ≥ 75% результата до него
+   * и ≥ 5 × IPREM. IPREM anual 2026 — 7 200 € (DA 90ª.c Ley 31/2022, продлена): 8 400 € относится только
+   * к нормам, где IPREM заменил SMI, а art. 18.6 с 2014 года ссылается на IPREM напрямую.
    */
-  socioProfesional: { minShare: 0.75, minAbsolute: 5 * 8400 },
+  socioProfesional: { minShare: 0.75, minAbsolute: 5 * 7200 },
 } as const;

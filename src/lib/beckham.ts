@@ -91,7 +91,7 @@ export const QUESTIONS: {
   {
     key: "filed",
     title: "Вы подали modelo 149?",
-    hint: "Срок — 6 месяцев с даты alta в Seguridad Social (члену семьи — с въезда в Испанию)",
+    hint: "Срок — 6 месяцев с даты alta в Seguridad Social; члену семьи — 6 месяцев с въезда или срок основного заявителя, если он позже",
     options: [
       { value: "yes", label: "Да, режим оформлен" },
       { value: "pending", label: "Ещё нет, 6 месяцев не прошли" },
@@ -104,6 +104,15 @@ const SRC_LAW: SourceId[] = ["lirpf_93"];
 const SRC_FILING: SourceId[] = ["lirpf_93", "rirpf_116"];
 
 const SRC_RIRPF: SourceId[] = ["lirpf_93", "rirpf_114"];
+
+/**
+ * Ley 28/2022 изменила art. 93 с 1 января 2023 года. Для тех, кто стал резидентом в 2021–2022,
+ * действует прежняя редакция: 10 лет без резидентства; только контракт с работодателем в Испании,
+ * перевод с carta de desplazamiento или должность администратора без доли, делающей компанию связанной.
+ */
+export const OLD_RULES_BEFORE = 2023;
+const oldRules = (a: BeckhamAnswers) => a.arrival !== null && /^\d+$/.test(a.arrival) && Number(a.arrival) < OLD_RULES_BEFORE;
+const NEW_ONLY_BASES: BkBasis[] = ["remote", "enisa", "startup", "family"];
 
 const UNKNOWN: BeckhamVerdict = {
   status: "unknown",
@@ -129,17 +138,29 @@ export function beckhamVerdict(a: BeckhamAnswers): BeckhamVerdict {
   }
 
   if (a.prior === null) return UNKNOWN;
+  const old = oldRules(a);
   if (a.prior === "yes") {
     return {
       status: "no",
-      title: "Не подходит: нужно 5 лет без резидентства",
-      text: "Режим только для тех, кто не был налоговым резидентом Испании ни в один из пяти лет до переезда (art. 93.1.a LIRPF).",
+      title: old ? "Не подходит: нужно 10 лет без резидентства" : "Не подходит: нужно 5 лет без резидентства",
+      text: old
+        ? "При переезде до 2023 года действует прежняя редакция art. 93.1.a LIRPF: нельзя быть налоговым резидентом Испании ни в один из десяти лет до переезда."
+        : "Режим только для тех, кто не был налоговым резидентом Испании ни в один из пяти лет до переезда (art. 93.1.a LIRPF).",
       stopAt: "prior",
       sources: SRC_LAW,
     };
   }
 
   if (a.basis === null) return UNKNOWN;
+  if (old && NEW_ONLY_BASES.includes(a.basis)) {
+    return {
+      status: "no",
+      title: "При переезде до 2023 года это основание не действовало",
+      text: "Удалённую работу, бизнес с одобрением ENISA, стартапы и членов семьи добавил Ley 28/2022 только с 2023 года. Для переезда в 2021–2022 годах подходили лишь контракт с работодателем в Испании, перевод от работодателя (carta de desplazamiento) или должность администратора компании.",
+      stopAt: "basis",
+      sources: SRC_LAW,
+    };
+  }
   if (a.basis === "freelance") {
     return {
       status: "no",
@@ -165,7 +186,7 @@ export function beckhamVerdict(a: BeckhamAnswers): BeckhamVerdict {
       return {
         status: "no",
         title: "Срок заявления пропущен",
-        text: "Modelo 149 подают не позже шести месяцев с даты alta в Seguridad Social, члену семьи — с въезда в Испанию (art. 116 RIRPF). Пропущенный срок не восстанавливается.",
+        text: "Modelo 149 подают не позже шести месяцев с даты alta в Seguridad Social. Члену семьи — шесть месяцев с въезда в Испанию или до конца срока основного заявителя, если он позже (art. 116.1.b RIRPF). Пропущенный срок не восстанавливается.",
         stopAt: "filed",
         sources: SRC_FILING,
       };
@@ -180,7 +201,9 @@ export function beckhamVerdict(a: BeckhamAnswers): BeckhamVerdict {
   // Пути, где право зависит от условий, которые калькулятор проверить не может
   const conditional: Partial<Record<BkBasis, { text: string; sources: SourceId[] }>> = {
     admin: {
-      text: `Администратор компании подходит, если компания ведёт реальную деятельность; если это холдинг (entidad patrimonial), доля должна быть меньше 25% (art. 93.1.b.2º LIRPF). Режим действует ${period}. ${model}`,
+      text: old
+        ? `По прежней редакции art. 93 (переезд до 2023 года) администратор подходит, только если его доля не делает компанию связанной с ним — меньше 25%. Режим действует ${period}. ${model}`
+        : `Администратор компании подходит, если компания ведёт реальную деятельность; если это холдинг (entidad patrimonial), доля должна быть меньше 25% (art. 93.1.b.2º LIRPF). Режим действует ${period}. ${model}`,
       sources: SRC_LAW,
     },
     enisa: {
@@ -221,7 +244,12 @@ export function visibleQuestions(a: BeckhamAnswers, verdict = beckhamVerdict(a))
   const out: (typeof QUESTIONS)[number][] = [];
   for (const q of QUESTIONS) {
     if (q.key === "filed" && a.arrival === "planned") continue;
-    out.push(q);
+    // Переезд до 2023 года — прежняя редакция art. 93: 10 лет без резидентства
+    out.push(
+      q.key === "prior" && oldRules(a)
+        ? { ...q, title: "В любой из 10 лет до этого вы были налоговым резидентом Испании?", hint: "Для переезда до 2023 года действуют прежние правила" }
+        : q,
+    );
     if (verdict.stopAt === q.key) break;
     if (a[q.key] === null) break;
   }

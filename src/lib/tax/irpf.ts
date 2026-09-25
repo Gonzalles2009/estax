@@ -129,7 +129,8 @@ export function workIncomeReduction(netWorkIncome: number, otherIncome: number):
   let red = 0;
   if (rn <= r.t1) red = r.max;
   else if (rn <= r.t2) red = r.max - r.k1 * (rn - r.t1);
-  else if (rn <= r.t3) red = r.mid - r.k2 * (rn - r.t2);
+  // «inferiores a 19 747,50 €»: на самой границе вычета уже нет
+  else if (rn < r.t3) red = r.mid - r.k2 * (rn - r.t2);
   return Math.max(0, Math.min(red, Math.max(0, rn)));
 }
 
@@ -142,4 +143,44 @@ export function smiDeduction(grossWorkIncome: number, otherIncome: number, cuota
   if (otherIncome > d.otherIncomeLimit || grossWorkIncome >= d.t2) return 0;
   const raw = grossWorkIncome <= d.t1 ? d.max : d.max - d.k * (grossWorkIncome - d.t1);
   return Math.max(0, Math.min(raw, cuotaOnWork));
+}
+
+/**
+ * Reducción art. 32.2.3º LIRPF для доходов от деятельности при rentas < 12 000 € (в т.ч. сама деятельность).
+ * Результат не делает RN отрицательным.
+ */
+export function rentasBajasReduction(rnActividad: number, otrasRentas = 0): number {
+  const r = P.irpf.rentasBajasActividad;
+  const rentas = Math.max(0, rnActividad) + Math.max(0, otrasRentas);
+  if (rnActividad <= 0 || rentas >= r.t2) return 0;
+  const red = rentas <= r.t1 ? r.max : r.max - r.k * (rentas - r.t1);
+  return Math.max(0, Math.min(red, rnActividad));
+}
+
+/**
+ * Вычет art. 81 bis.1.c LIRPF (familia numerosa / одинокий родитель с 2 детьми) для того,
+ * кто работает и платит взносы. couple — оба родителя имеют право, вычет делится пополам.
+ * ssTotal — cotizaciones totales за год: лимит для базовых 1 200 €; надбавки под лимит не попадают.
+ */
+export function familyDeduction(family: Family, children: number, ssTotal: number): { amount: number; label: string } {
+  const f = P.irpf.familiaNumerosa;
+  let limited = 0;
+  let extra = 0;
+  let label = "";
+  if (children >= f.especialMin) {
+    limited = f.base;
+    extra = f.base + f.extraChild * (children - f.especialMin);
+    label = "familia numerosa especial";
+  } else if (children >= f.generalMin) {
+    limited = f.base;
+    extra = f.extraChild * (children - f.generalMin);
+    label = "familia numerosa general";
+  } else if (family === "single" && children === 2) {
+    limited = f.base;
+    label = "одинокий родитель с 2 детьми";
+  } else {
+    return { amount: 0, label: "" };
+  }
+  const share = family === "couple" ? 0.5 : 1;
+  return { amount: Math.min(limited * share, Math.max(0, ssTotal)) + extra * share, label };
 }

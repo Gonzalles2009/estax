@@ -82,6 +82,11 @@ export interface Breakdown {
   ssEmployer: number;
   /** Рабочие расходы */
   expenses: number;
+  /**
+   * Выплата от Hacienda сверх налога: вычет art. 81 bis (многодетные) больше IRPF к уплате.
+   * Входит в net, поэтому сумма частей = бюджет + benefit.
+   */
+  benefit?: number;
   /** Бухгалтерия */
   gestoria: number;
 }

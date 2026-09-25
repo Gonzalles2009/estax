@@ -76,8 +76,8 @@ export function MoreSettings({ bare = false }: { bare?: boolean }) {
           <Switch
             checked={s.slNewCompany}
             onChange={(v) => s.set({ slNewCompany: v })}
-            label="SL — новая компания (налог на прибыль 15%)"
-            hint="Первый год с прибылью и следующий (art. 29.1 LIS). Не положено, если ту же работу вы в прошлом году делали как autónomo."
+            label="SL — первый год новой компании"
+            hint="Налог на прибыль 15% (art. 29.1 LIS) и tarifa plana 80 € для вас как socio (art. 38 ter.9 LETA). Не положено, если ту же работу вы в прошлом году делали как autónomo или были в RETA последние два года."
           />
         </div>
         <p className="text-xs text-ink-3 @xl:col-span-2">Страна Басков и Наварра не поддерживаются: у них собственный IRPF.</p>

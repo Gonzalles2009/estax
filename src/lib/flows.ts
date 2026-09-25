@@ -1,7 +1,7 @@
 import type { RegimeResult } from "./tax/types";
 
 export type TerminalId = "you" | "tax" | "ss" | "cost";
-export type FlowNodeId = "budget" | "gross" | "income" | "company" | "salary" | "div" | TerminalId;
+export type FlowNodeId = "budget" | "gross" | "income" | "company" | "salary" | "div" | "refund" | TerminalId;
 
 export interface FlowNode {
   id: FlowNodeId;
@@ -33,7 +33,7 @@ export const TERMINALS: { id: TerminalId; label: string; color: string; hint: st
   { id: "cost", label: "Расходы", color: "var(--f-cost)", hint: "Рабочие расходы и бухгалтерия" },
 ];
 
-const ORDER: FlowNodeId[] = ["budget", "gross", "income", "company", "salary", "div", "you", "tax", "ss", "cost"];
+const ORDER: FlowNodeId[] = ["budget", "gross", "income", "company", "salary", "div", "refund", "you", "tax", "ss", "cost"];
 export const nodeOrder = (id: FlowNodeId) => ORDER.indexOf(id);
 
 /**
@@ -43,6 +43,8 @@ export const nodeOrder = (id: FlowNodeId) => ORDER.indexOf(id);
 export function flowsOf(r: RegimeResult): FlowGraph {
   const b = r.breakdown;
   const costs = b.expenses + b.gestoria;
+  // Вычет art. 81 bis сверх налога: Hacienda доплачивает — отдельный источник денег
+  const benefit = b.benefit ?? 0;
   const links: FlowLink[] = [];
   const nodes: FlowNode[] = [];
   const add = (id: FlowNodeId, label: string) => nodes.push({ id, label, terminal: false });
@@ -65,7 +67,7 @@ export function flowsOf(r: RegimeResult): FlowGraph {
       link("gross", "ss", b.ssWorker, "Ваши взносы");
       link("gross", "tax", b.irpf, r.regime === "beckham" ? "IRPF по Beckham" : "IRPF");
       link("gross", "cost", costs, "Рабочие расходы");
-      link("gross", "you", b.net, "Остаётся вам");
+      link("gross", "you", b.net - benefit, "Остаётся вам");
       break;
     }
     case "autonomo":
@@ -76,7 +78,7 @@ export function flowsOf(r: RegimeResult): FlowGraph {
       link("budget", "income", r.budget - costs, "Доход до налогов");
       link("income", "ss", b.ssWorker, "Cuota autónomo");
       link("income", "tax", b.irpf, "IRPF");
-      link("income", "you", b.net, "Остаётся вам");
+      link("income", "you", b.net - benefit, "Остаётся вам");
       break;
     }
     case "sl_safe":
@@ -99,6 +101,11 @@ export function flowsOf(r: RegimeResult): FlowGraph {
       link("div", "you", div - b.dividendTax, "Дивиденды на руки");
       break;
     }
+  }
+
+  if (benefit > 0.5) {
+    add("refund", "Выплата Hacienda");
+    link("refund", "you", benefit, "Вычет art. 81 bis сверх налога");
   }
 
   const totals: Record<TerminalId, number> = {

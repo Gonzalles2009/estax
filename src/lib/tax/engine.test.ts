@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { calculate, calculateAll, REGIME_IDS } from "./engine";
-import { applyScale, computeIrpf, workIncomeReduction } from "./irpf";
+import { applyScale, computeIrpf, familyDeduction, rentasBajasReduction, workIncomeReduction } from "./irpf";
 import { employeeSS, grossFromEmployerCost, retaQuota } from "./social-security";
 import { P } from "./params-2026";
 import { REGIONS, REGION_ORDER } from "./regions-2026";
@@ -139,7 +139,8 @@ describe("режимы", () => {
       for (const budget of budgets) {
         for (const r of calculateAll(REGIME_IDS, { ...base, ...v, budget })) {
           const b = r.breakdown;
-          const sum = b.net + b.irpf + b.dividendTax + b.corporateTax + b.ssWorker + b.ssEmployer + b.expenses + b.gestoria;
+          // Выплата Hacienda (art. 81 bis сверх налога) входит в net, но не в бюджет
+          const sum = b.net + b.irpf + b.dividendTax + b.corporateTax + b.ssWorker + b.ssEmployer + b.expenses + b.gestoria - (b.benefit ?? 0);
           const expected = r.regime === "employee" || r.regime === "beckham" ? (v.employeeBasis === "gross" ? r.meta.grossSalary! : budget) : budget;
           expect(sum, `${r.regime} @ ${budget} ${JSON.stringify(v)}`).toBeCloseTo(expected, 4);
           for (const [k, val] of Object.entries(b)) {
@@ -206,5 +207,66 @@ describe("источники", () => {
         expect(s.source in SOURCES || s.source.startsWith("https://www.boe.es/"), `${r.regime}: ${s.source}`).toBe(true);
       }
     }
+  });
+});
+
+describe("находки проверки данных 25.09.2026", () => {
+  test("art. 81 bis: многодетные и одинокий родитель с 2 детьми", () => {
+    const big = 1e6;
+    expect(familyDeduction("single", 2, big).amount).toBe(1200);
+    expect(familyDeduction("single", 1, big).amount).toBe(0);
+    expect(familyDeduction("couple_joint", 2, big).amount).toBe(0);
+    expect(familyDeduction("couple_joint", 3, big).amount).toBe(1200);
+    expect(familyDeduction("couple_joint", 4, big).amount).toBe(1800);
+    expect(familyDeduction("couple_joint", 5, big).amount).toBe(2400);
+    expect(familyDeduction("couple_joint", 6, big).amount).toBe(3000);
+    // Оба родителя работают — вычет делится пополам
+    expect(familyDeduction("couple", 4, big).amount).toBe(900);
+    // Лимит взносами — только для базовых 1 200 €, надбавки сверх него
+    expect(familyDeduction("single", 6, 500).amount).toBe(500 + 1200 + 600);
+  });
+
+  test("art. 81 bis: вычет в расчёте, сверх налога — выплата; у Beckham вычета нет", () => {
+    for (const regime of ["employee", "autonomo", "sl_safe"] as const) {
+      for (const budget of [20000, 70000]) {
+        const r = calculate(regime, { ...base, family: "couple_joint", children: 3, budget });
+        const step = r.steps.find((s) => s.source === "lirpf_81bis" && s.group === "tax");
+        expect(step?.amount, `${regime} @ ${budget}`).toBe(1200);
+        // Выплата бывает, только когда налог к уплате уже обнулён
+        if ((r.breakdown.benefit ?? 0) > 0) expect(r.breakdown.irpf + r.breakdown.dividendTax).toBe(0);
+      }
+    }
+    expect(calculate("beckham", { ...base, family: "couple_joint", children: 3 }).steps.some((s) => s.source === "lirpf_81bis")).toBe(false);
+    // На низком доходе налог меньше вычета — Hacienda доплачивает
+    const low = calculate("employee", { ...base, family: "couple_joint", children: 4, budget: 20000 });
+    expect(low.breakdown.irpf).toBe(0);
+    expect(low.breakdown.benefit).toBeGreaterThan(0);
+  });
+
+  test("art. 32.2.3º: вычет для низких доходов от деятельности", () => {
+    expect(rentasBajasReduction(7000)).toBe(1620);
+    expect(rentasBajasReduction(8000)).toBe(1620);
+    expect(rentasBajasReduction(10000)).toBeCloseTo(1620 - 0.405 * 2000, 6);
+    expect(rentasBajasReduction(12000)).toBe(0);
+    expect(rentasBajasReduction(1000)).toBe(1000);
+    const r = calculate("autonomo", { ...base, budget: 15000 });
+    expect(r.steps.some((s) => s.label === "Reducción por rentas bajas")).toBe(true);
+    expect(calculate("autonomo", { ...base, budget: 30000 }).steps.some((s) => s.label === "Reducción por rentas bajas")).toBe(false);
+  });
+
+  test("art. 20: на границе 19 747,50 € вычета нет", () => {
+    expect(workIncomeReduction(19747.5, 0)).toBe(0);
+    expect(workIncomeReduction(19747.49, 0)).toBeGreaterThan(0);
+  });
+
+  test("art. 18.6 LIS: минимум — 5 × IPREM 7 200 € = 36 000 €", () => {
+    expect(P.socioProfesional.minAbsolute).toBe(36000);
+  });
+
+  test("новая SL: tarifa plana для socio (art. 38 ter.9 LETA)", () => {
+    const r = calculate("sl_safe", { ...base, slNewCompany: true, budget: 60000 });
+    expect(r.breakdown.ssWorker).toBeCloseTo(P.ss.reta.tarifaPlanaMonthly * 12, 6);
+    expect(r.meta.retaTramo).toBe("Tarifa plana");
+    expect(calculate("sl_safe", { ...base, budget: 60000 }).breakdown.ssWorker).toBeGreaterThan(P.ss.reta.tarifaPlanaMonthly * 12);
   });
 });
