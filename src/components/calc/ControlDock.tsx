@@ -14,22 +14,34 @@ import { Stepper } from "@/components/ui/controls";
 import { BeckhamCheck } from "./BeckhamCheck";
 import { BudgetInput, budgetToPos, FAMILY_SHORT, posToBudget, usePickerOptions } from "./Hero";
 import { MoreSettings } from "./MoreSettings";
-import { useBeckhamVerdict, useCurrentRegime } from "./useCurrent";
+import { useCurrentRegime } from "./useCurrent";
+import { Mark } from "@/components/ui/Mark";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-const BK_DOT = { unknown: "var(--ink-3)", yes: "var(--ok)", maybe: "var(--f-you)", no: "var(--f-tax)" } as const;
+/** Ползунок в начале страницы ушёл из виду — пора показать плавающую панель */
+export function useHeroControlsOut() {
+  const [out, setOut] = useState(false);
+  useEffect(() => {
+    const el = document.getElementById("hero-controls");
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setOut(!e.isIntersecting && e.boundingClientRect.top < 0));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return out;
+}
 
 /** Все параметры расчёта — в раскрывающейся части панели */
-function DockSettings({ results }: { results: RegimeResult[] }) {
+export function DockSettings({ results }: { results: RegimeResult[] }) {
   const s = useCalc(
     useShallow((st) => ({ region: st.region, family: st.family, children: st.children, under3: st.childrenUnder3, set: st.set })),
   );
   const { regionOptions, familyOptions, pickerFooter } = usePickerOptions(results);
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
-        <div className="col-span-2 min-w-0 sm:col-span-1">
+    <div className="space-y-6 @container">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4 @3xl:grid-cols-4">
+        <div className="col-span-2 min-w-0 @md:col-span-1">
           <div className="eyebrow mb-2">Регион</div>
           <InlinePicker<RegionId>
             variant="chip"
@@ -41,7 +53,7 @@ function DockSettings({ results }: { results: RegimeResult[] }) {
             footer={pickerFooter}
           />
         </div>
-        <div className="col-span-2 min-w-0 sm:col-span-1">
+        <div className="col-span-2 min-w-0 @md:col-span-1">
           <div className="eyebrow mb-2">Семья</div>
           <InlinePicker<Family>
             variant="chip"
@@ -74,27 +86,18 @@ function DockSettings({ results }: { results: RegimeResult[] }) {
 }
 
 /**
- * Плавающая панель: сумма, ползунок и все параметры под рукой в любом месте страницы.
- * Появляется, когда ползунок в начале страницы уходит из виду.
+ * Плавающая панель для телефона и планшета: сумма, ползунок и все параметры внизу экрана.
+ * На десктопе вместо неё — вертикальная панель справа (SideRail).
  */
 export function ControlDock({ results }: { results: RegimeResult[] }) {
   const s = useCalc(
     useShallow((st) => ({ budget: st.budget, region: st.region, family: st.family, children: st.children, set: st.set })),
   );
   const { current } = useCurrentRegime(results);
-  const verdict = useBeckhamVerdict();
-  const [show, setShow] = useState(false);
+  const show = useHeroControlsOut();
   const [open, setOpen] = useState(false);
   const expanded = show && open;
   const pos = budgetToPos(s.budget);
-
-  useEffect(() => {
-    const el = document.getElementById("hero-controls");
-    if (!el) return;
-    const io = new IntersectionObserver(([e]) => setShow(!e.isIntersecting && e.boundingClientRect.top < 0));
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
 
   const summary = `${REGIONS[s.region].name} · ${FAMILY_SHORT[s.family]} · ${s.children ? `детей: ${s.children}` : "без детей"}`;
 
@@ -112,10 +115,10 @@ export function ControlDock({ results }: { results: RegimeResult[] }) {
             // Esc в открытом списке региона сначала закрывает список
             if (e.key === "Escape" && open && !e.defaultPrevented) setOpen(false);
           }}
-          className="fixed inset-x-2 bottom-2 z-40 mx-auto max-w-[1080px] sm:inset-x-4 sm:bottom-4"
+          className="fixed inset-x-2 bottom-2 z-40 mx-auto max-w-[760px] sm:inset-x-4 sm:bottom-4 lg:hidden"
           style={{ marginBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div className="card overflow-hidden !rounded-[26px] backdrop-blur-xl">
+          <div className="card overflow-hidden backdrop-blur-xl">
             <AnimatePresence initial={false}>
               {expanded && (
                 <motion.div
@@ -141,7 +144,7 @@ export function ControlDock({ results }: { results: RegimeResult[] }) {
 
               <a href="#flow" className="min-w-0 text-right sm:order-last sm:shrink-0" title="Куда уходят деньги">
                 <span className="flex items-center justify-end gap-1.5 text-[11px] text-ink-3">
-                  <span className="size-1.5 shrink-0 rounded-full" style={{ background: REGIME_META[current.regime].color }} />
+                  <Mark color={REGIME_META[current.regime].color} className="!h-3" />
                   <span className="truncate">{REGIME_META[current.regime].short}</span>
                 </span>
                 <span className="serif block whitespace-nowrap text-2xl font-medium leading-tight text-ink">
@@ -166,7 +169,7 @@ export function ControlDock({ results }: { results: RegimeResult[] }) {
                 type="button"
                 aria-expanded={expanded}
                 onClick={() => setOpen((o) => !o)}
-                className={`col-span-2 flex min-w-0 items-center gap-2 rounded-full border px-3 py-1.5 text-left text-xs font-medium transition-colors sm:max-w-[300px] sm:shrink ${
+                className={`col-span-2 flex min-w-0 items-center gap-2 rounded-lg border px-3 py-1.5 text-left text-xs font-medium transition-colors sm:max-w-[300px] sm:shrink ${
                   expanded ? "border-ink bg-ink text-bg" : "border-line-strong text-ink-2 hover:border-ink/40 hover:text-ink"
                 }`}
               >
@@ -176,11 +179,6 @@ export function ControlDock({ results }: { results: RegimeResult[] }) {
                   <circle cx="8" cy="14" r="2" />
                 </svg>
                 <span className="min-w-0 flex-1 truncate">{summary}</span>
-                <span
-                  className="size-2 shrink-0 rounded-full"
-                  style={{ background: BK_DOT[verdict.status] }}
-                  title={`Ley Beckham: ${verdict.title.toLowerCase()}`}
-                />
                 <motion.svg animate={{ rotate: expanded ? 180 : 0 }} viewBox="0 0 20 20" className="size-3.5 shrink-0" aria-hidden>
                   <path d="M5 12l5-5 5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </motion.svg>

@@ -238,7 +238,7 @@ export function InlinePicker<T extends string>({
             transition={{ duration: 0.25, delay: Math.min(i, 10) * 0.018, ease }}
             onPointerMove={() => setActive(i)}
             onClick={() => choose(i)}
-            className={`relative flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-2.5 transition-colors ${
+            className={`relative flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
               isActive ? "bg-ink/[0.06]" : ""
             }`}
           >
@@ -290,7 +290,7 @@ export function InlinePicker<T extends string>({
         }}
         className={
           variant === "chip"
-            ? "relative flex w-full items-center justify-between gap-2 overflow-hidden rounded-full border border-line bg-surface-2/60 px-3.5 py-2 text-left text-sm font-medium text-ink transition-colors hover:border-line-strong"
+            ? "relative flex w-full items-center justify-between gap-2 overflow-hidden rounded-lg border border-line bg-surface-2/60 px-3.5 py-2 text-left text-sm font-medium text-ink transition-colors hover:border-line-strong"
             : "inline-field relative inline-flex items-baseline gap-1 px-1 text-left text-ink"
         }
       >
@@ -336,7 +336,7 @@ export function InlinePicker<T extends string>({
                   ...(pos.above ? { bottom: innerHeight - pos.top } : { top: pos.top }),
                   transformOrigin: pos.above ? "bottom left" : "top left",
                 }}
-                className="card z-[60] !rounded-[24px] p-2 backdrop-blur-xl"
+                className="card z-[60] p-2 backdrop-blur-xl"
               >
                 {header}
                 <div className="overflow-y-auto overscroll-contain" style={{ maxHeight: pos.maxHeight - 48 }}>
@@ -366,7 +366,7 @@ export function InlinePicker<T extends string>({
                   }}
                   ref={panelRef}
                   onMouseDown={keepFocus}
-                  className="card absolute inset-x-0 bottom-0 !rounded-b-none !rounded-t-[28px] px-2 pt-2"
+                  className="card absolute inset-x-0 bottom-0 !rounded-b-none !rounded-t-[18px] px-2 pt-2"
                   style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
                 >
                   <div className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-ink/15" />

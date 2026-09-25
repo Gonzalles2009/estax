@@ -10,6 +10,7 @@ import { linear, niceDomain, niceTicks } from "@/lib/scale";
 import { kEur, n0, pct } from "@/lib/format";
 import type { CurvePoint } from "./useResults";
 import { leaderOf, useAvailability } from "./useCurrent";
+import { Mark } from "@/components/ui/Mark";
 
 function useWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null);
@@ -74,9 +75,9 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
   const [hoverX, setHoverX] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  const mobile = width > 0 && width < 640;
+  const mobile = width > 0 && width < 560;
   const H = mobile ? 320 : 420;
-  const pad = { l: mobile ? 44 : 56, r: mobile ? 12 : 128, t: 34, b: 44 };
+  const pad = { l: mobile ? 50 : 56, r: mobile ? 12 : 128, t: 34, b: 44 };
   const W = Math.max(width, 280);
 
   const { x, y, yTicks, xTicks } = useMemo(() => {
@@ -210,7 +211,7 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
                 stroke={t === 0 && mode !== "share" ? "var(--line-strong)" : "var(--line)"}
                 strokeDasharray={t === 0 ? undefined : "2 4"}
               />
-              <text x={pad.l - 10} y={y(t)} dy="0.32em" textAnchor="end" className="tnum fill-ink-3 text-[11px]">
+              <text x={pad.l - 8} y={y(t)} dy="0.32em" textAnchor="end" className="tnum fill-ink-3 text-[11px]">
                 {fmtY(mode, t)}
               </text>
             </g>
@@ -292,7 +293,7 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
           <motion.g initial={false} animate={{ x: bx }} transition={spring}>
             <line x1={0} x2={0} y1={pad.t - 6} y2={H - pad.b} stroke="url(#budget-line)" strokeWidth={1.5} />
             <g transform={`translate(0, ${pad.t - 20})`}>
-              <rect x={-40} y={-11} width={80} height={22} rx={11} fill="var(--ink)" />
+              <rect x={-40} y={-11} width={80} height={22} rx={4} fill="var(--ink)" />
               <text textAnchor="middle" dy="0.34em" className="tnum fill-bg text-[11.5px] font-semibold">
                 {n0(budget)} €
               </text>
@@ -333,7 +334,7 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="pointer-events-none absolute top-10 z-10 min-w-52 rounded-2xl border border-line-strong bg-surface/95 p-3 shadow-2xl backdrop-blur"
+            className="pointer-events-none absolute top-10 z-10 min-w-52 rounded-[10px] border border-line-strong bg-surface/95 p-3 shadow-2xl backdrop-blur"
             style={tipOnLeft ? { right: W - tipLeft + 14 } : { left: tipLeft + 14 }}
           >
             <div className="tnum mb-2 text-xs text-ink-3">
@@ -343,7 +344,7 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
               {tooltipItems.map(({ r, v }) => (
                 <li key={r} className="flex items-center justify-between gap-4 text-[13px]">
                   <span className="flex items-center gap-2 text-ink-2">
-                    <span className="size-2 rounded-full" style={{ background: REGIME_META[r].color }} />
+                    <Mark color={REGIME_META[r].color} className="!h-3" />
                     {REGIME_META[r].short}
                   </span>
                   <span className="tnum font-medium text-ink">{fmtValue(mode, v)}</span>

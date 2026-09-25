@@ -9,6 +9,7 @@ import type { RegimeResult } from "@/lib/tax/types";
 import { n0 } from "@/lib/format";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { MoneyFlow } from "./MoneyFlow";
+import { Mark } from "@/components/ui/Mark";
 import { useCurrentRegime } from "./useCurrent";
 
 export { useCurrentRegime } from "./useCurrent";
@@ -88,25 +89,22 @@ export function FlowSection({ results }: { results: RegimeResult[] }) {
                         type="button"
                         aria-pressed={active}
                         onClick={() => set({ focus: r.regime })}
-                        className={`relative flex w-full items-center gap-2.5 rounded-full px-3.5 py-2 text-left text-sm transition-colors lg:rounded-2xl ${
+                        className={`relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                           active ? "text-bg" : "text-ink-2 hover:bg-ink/5 hover:text-ink"
                         }`}
                       >
                         {active && (
-                          <motion.span layoutId="flow-active" className="absolute inset-0 rounded-full bg-ink lg:rounded-2xl" transition={{ type: "spring", stiffness: 420, damping: 36 }} />
+                          <motion.span layoutId="flow-active" className="absolute inset-0 rounded-lg bg-ink" transition={{ type: "spring", stiffness: 420, damping: 36 }} />
                         )}
-                        <span className="relative size-2.5 shrink-0 rounded-full" style={{ background: m.color }} />
+                        <Mark color={m.color} className="relative" />
                         <span className="relative whitespace-nowrap font-medium">{m.short}</span>
-                        {r.regime === best.regime && (
-                          <span className={`relative rounded-full px-1.5 py-px text-[10px] font-semibold ${active ? "bg-bg/20" : "bg-f-you/20 text-ink"}`}>лучший</span>
-                        )}
-                        {avail(r.regime) !== "ok" && (
+                        {(r.regime === best.regime || avail(r.regime) !== "ok") && (
                           <span
-                            className={`relative rounded-full border px-1.5 py-px text-[10px] font-medium ${
-                              active ? "border-bg/30" : avail(r.regime) === "no" ? "border-f-tax/40 text-f-tax" : "border-line-strong text-ink-3"
+                            className={`relative whitespace-nowrap text-[11px] ${
+                              active ? "text-bg/70" : avail(r.regime) === "no" ? "text-f-tax" : "text-ink-3"
                             }`}
                           >
-                            {avail(r.regime) === "no" ? "недоступен" : "условно"}
+                            {r.regime === best.regime ? "лучший" : avail(r.regime) === "no" ? "недоступен" : "условно"}
                           </span>
                         )}
                         <span className="tnum relative ml-auto hidden pl-3 lg:inline">{n0(r.netMonthly)} €</span>

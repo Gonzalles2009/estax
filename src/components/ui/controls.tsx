@@ -20,7 +20,7 @@ export function Segmented<T extends string>({
 }) {
   const id = useId();
   return (
-    <div role="radiogroup" aria-label={label} className="relative flex w-full rounded-full border border-line bg-surface-2/60 p-1">
+    <div role="radiogroup" aria-label={label} className="relative flex w-full rounded-lg border border-line bg-surface-2/60 p-1">
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -31,14 +31,14 @@ export function Segmented<T extends string>({
             aria-checked={active}
             title={o.hint}
             onClick={() => onChange(o.value)}
-            className={`relative flex-1 rounded-full px-3 ${size === "sm" ? "py-1.5 text-xs" : "py-2 text-sm"} font-medium transition-colors ${
+            className={`relative flex-1 rounded-md px-3 ${size === "sm" ? "py-1.5 text-xs" : "py-2 text-sm"} font-medium transition-colors ${
               active ? "text-bg" : "text-ink-2 hover:text-ink"
             }`}
           >
             {active && (
               <motion.span
                 layoutId={`seg-${id}`}
-                className="absolute inset-0 rounded-full bg-ink"
+                className="absolute inset-0 rounded-md bg-ink"
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
             )}
@@ -69,10 +69,10 @@ export function Stepper({
 }) {
   const btn =
     size === "inline"
-      ? "grid size-[1.05em] place-items-center rounded-full font-sans text-[0.62em] font-medium text-accent transition hover:bg-accent/10 disabled:text-ink-3 disabled:opacity-40"
-      : "grid size-8 place-items-center rounded-full text-lg text-ink-2 transition hover:bg-ink/10 hover:text-ink disabled:opacity-25";
+      ? "grid size-[1.05em] place-items-center rounded-md font-sans text-[0.62em] font-medium text-accent transition hover:bg-accent/10 disabled:text-ink-3 disabled:opacity-40"
+      : "grid size-8 place-items-center rounded-md text-lg text-ink-2 transition hover:bg-ink/10 hover:text-ink disabled:opacity-25";
   return (
-    <span className={`inline-flex items-center gap-0.5 rounded-full ${size === "inline" ? "" : "border border-line bg-surface-2/60 p-1"}`}>
+    <span className={`inline-flex items-center gap-0.5 rounded-lg ${size === "inline" ? "" : "border border-line bg-surface-2/60 p-1"}`}>
       <button type="button" aria-label={`${label}: меньше`} disabled={value <= min} onClick={() => onChange(value - 1)} className={btn}>
         −
       </button>

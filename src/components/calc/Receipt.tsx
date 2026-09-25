@@ -209,7 +209,7 @@ export function ReceiptSection({ results }: { results: RegimeResult[] }) {
               type="button"
               disabled={busy}
               onClick={share}
-              className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-bg transition hover:opacity-90 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-lg bg-ink px-5 py-3 text-sm font-semibold text-bg transition hover:opacity-90 disabled:opacity-60"
             >
               <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
@@ -220,7 +220,7 @@ export function ReceiptSection({ results }: { results: RegimeResult[] }) {
               type="button"
               disabled={busy}
               onClick={download}
-              className="inline-flex items-center gap-2 rounded-full border border-line-strong px-5 py-3 text-sm font-semibold text-ink transition hover:bg-ink/5 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-lg border border-line-strong px-5 py-3 text-sm font-semibold text-ink transition hover:bg-ink/5 disabled:opacity-60"
             >
               <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="M12 4v12M7 11l5 5 5-5M5 20h14" />

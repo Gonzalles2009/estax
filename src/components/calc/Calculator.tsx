@@ -11,6 +11,7 @@ import { ChartPanel } from "./ChartPanel";
 import { FlowSection } from "./FlowSection";
 import { Hero } from "./Hero";
 import { ControlDock } from "./ControlDock";
+import { SideRail } from "./SideRail";
 import { Ranking } from "./Ranking";
 import { ReceiptSection } from "./Receipt";
 import { Trace } from "./Trace";
@@ -82,14 +83,21 @@ function RegimeChips() {
             onClick={() => toggle(id)}
             onMouseEnter={() => on && set({ highlight: id })}
             onMouseLeave={() => set({ highlight: null })}
-            className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-              on ? "border-line-strong bg-surface text-ink" : "border-dashed border-line-strong text-ink-3 hover:text-ink-2"
+            className={`flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+              on ? "border-line-strong bg-surface text-ink" : "border-line text-ink-3 hover:text-ink-2"
             } ${highlight === id ? "bg-ink/[0.06]" : ""}`}
           >
+            {/* Флажок в цвете режима: заполнен — режим в сравнении */}
             <span
-              className="size-2.5 rounded-full transition-all"
+              className="grid size-3.5 place-items-center rounded-[3px] transition-colors"
               style={{ background: on ? meta.color : "transparent", boxShadow: on ? "none" : `inset 0 0 0 1.5px ${meta.color}` }}
-            />
+            >
+              {on && (
+                <svg viewBox="0 0 12 12" className="size-2.5 text-white" aria-hidden>
+                  <path d="M2.5 6.2l2.3 2.3 4.7-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </span>
             {meta.short}
           </motion.button>
         );
@@ -180,6 +188,7 @@ export function Calculator() {
       </section>
 
       <ControlDock results={results} />
+      <SideRail results={results} />
     </>
   );
 }
