@@ -21,9 +21,9 @@ const upTo = (x: number) => (x === Infinity ? "и выше" : n2(x));
 function ScaleTable({ scale, caption }: { scale: readonly Bracket[]; caption?: string }) {
   return (
     <table className="w-full text-sm">
-      {caption && <caption className="mb-2 text-left text-xs text-fg-3">{caption}</caption>}
+      {caption && <caption className="mb-2 text-left text-xs text-ink-3">{caption}</caption>}
       <thead>
-        <tr className="text-left text-xs text-fg-3">
+        <tr className="text-left text-xs text-ink-3">
           <th className="py-1.5 pr-3 font-medium">База от, €</th>
           <th className="py-1.5 pr-3 font-medium">до, €</th>
           <th className="py-1.5 text-right font-medium">Ставка</th>
@@ -32,9 +32,9 @@ function ScaleTable({ scale, caption }: { scale: readonly Bracket[]; caption?: s
       <tbody className="tnum">
         {scale.map(([from, to, r]) => (
           <tr key={from} className="border-t border-line">
-            <td className="py-1.5 pr-3 text-fg-2">{n2(from)}</td>
-            <td className="py-1.5 pr-3 text-fg-2">{upTo(to)}</td>
-            <td className="py-1.5 text-right font-medium text-fg">{rate(r)}</td>
+            <td className="py-1.5 pr-3 text-ink-2">{n2(from)}</td>
+            <td className="py-1.5 pr-3 text-ink-2">{upTo(to)}</td>
+            <td className="py-1.5 text-right font-medium text-ink">{rate(r)}</td>
           </tr>
         ))}
       </tbody>
@@ -44,18 +44,18 @@ function ScaleTable({ scale, caption }: { scale: readonly Bracket[]; caption?: s
 
 function Card({ title, children, source }: { title: string; children: React.ReactNode; source?: string[] }) {
   return (
-    <section className="panel p-5 sm:p-6">
-      <h3 className="mb-4 text-base font-semibold text-fg">{title}</h3>
+    <section className="card p-5 sm:p-6">
+      <h3 className="serif mb-4 text-xl font-medium tracking-tight text-ink">{title}</h3>
       {children}
       {source && (
-        <p className="mt-4 text-xs leading-relaxed text-fg-3">
+        <p className="mt-4 text-xs leading-relaxed text-ink-3">
           Источник:{" "}
           {source.map((id, i) => {
             const s = SOURCES[id as keyof typeof SOURCES];
             return (
               <span key={id}>
                 {i > 0 && ", "}
-                <a href={s.url} target="_blank" rel="noreferrer" className="text-fg-2 underline decoration-line-strong underline-offset-4 hover:text-sun">
+                <a href={s.url} target="_blank" rel="noreferrer" className="text-ink-2 underline decoration-[var(--line-strong)] underline-offset-4 hover:text-accent">
                   {s.short}
                 </a>
               </span>
@@ -70,8 +70,8 @@ function Card({ title, children, source }: { title: string; children: React.Reac
 function H2({ id, children, lead }: { id: string; children: React.ReactNode; lead?: string }) {
   return (
     <header id={id} className="mb-6 mt-16 max-w-3xl scroll-mt-6">
-      <h2 className="text-3xl font-semibold tracking-tight text-fg">{children}</h2>
-      {lead && <p className="mt-3 text-[15px] leading-relaxed text-fg-2">{lead}</p>}
+      <h2 className="serif text-4xl font-medium tracking-tight text-ink">{children}</h2>
+      {lead && <p className="mt-3 text-[15px] leading-relaxed text-ink-2">{lead}</p>}
     </header>
   );
 }
@@ -87,11 +87,11 @@ export default function Methodology() {
       <Nav />
       <main className="mx-auto max-w-[1100px] px-4 sm:px-6">
         <header className="pb-4 pt-8">
-          <Link href="/" className="text-sm text-fg-3 hover:text-fg">
+          <Link href="/" className="text-sm text-ink-3 hover:text-ink">
             ← К калькулятору
           </Link>
-          <h1 className="mt-6 text-5xl font-semibold tracking-tight text-fg sm:text-6xl">Методология</h1>
-          <p className="mt-5 max-w-3xl text-lg leading-relaxed text-fg-2">
+          <h1 className="serif mt-6 text-5xl font-medium tracking-[-0.03em] text-ink sm:text-7xl">Методология</h1>
+          <p className="mt-5 max-w-3xl text-lg leading-relaxed text-ink-2">
             Все параметры {P.year} года, по которым считает калькулятор, с источниками. Проверено {verified} по
             консолидированным текстам BOE, страницам AEAT и Seguridad Social. Если нашли расхождение с нормой — это баг,
             откройте issue на GitHub.
@@ -107,7 +107,7 @@ export default function Methodology() {
               ["limits", "Упрощения"],
               ["sources", "Источники"],
             ].map(([id, label]) => (
-              <a key={id} href={`#${id}`} className="rounded-full border border-line px-3 py-1.5 text-fg-2 transition hover:border-line-strong hover:text-fg">
+              <a key={id} href={`#${id}`} className="rounded-full border border-line px-3 py-1.5 text-ink-2 transition hover:border-line-strong hover:text-ink">
                 {label}
               </a>
             ))}
@@ -122,7 +122,7 @@ export default function Methodology() {
         </H2>
         <div className="grid gap-4 md:grid-cols-2">
           <Card title="Работа по найму" source={["lirpf_19", "lirpf_20", "lirpf_63", "ss_bases"]}>
-            <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-fg-2">
+            <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-ink-2">
               <li>Брутто = бюджет − взносы работодателя {rate(employer)} (база до {n2(P.ss.maxBaseMonthly)} €/мес).</li>
               <li>Ваши взносы {rate(employee)} + взнос солидарности с части выше максимальной базы.</li>
               <li>База IRPF = брутто − взносы − reducción art. 20 (только для низких доходов) − 2 000 € «otros gastos».</li>
@@ -131,14 +131,14 @@ export default function Methodology() {
             </ol>
           </Card>
           <Card title="Найм + Ley Beckham" source={["lirpf_93", "rirpf_114"]}>
-            <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-fg-2">
+            <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-ink-2">
               <li>Брутто и взносы — как при найме.</li>
               <li>База = вся брутто-зарплата: по правилам IRNR (art. 24.1 TRLIRNR) не вычитаются ни взносы, ни 2 000 €, ни mínimos — подтверждено DGT V1112-25.</li>
               <li>24% до 600 000 €, 47% свыше. Региональной части нет.</li>
             </ol>
           </Card>
           <Card title="Autónomo" source={["lirpf_30", "lgss_308", "lirpf_32"]}>
-            <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-fg-2">
+            <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-ink-2">
               <li>Доход для cuota = рендимьенто по IRPF + сама cuota, минус 7%: (выручка − расходы − гестория − 5% difícil justificación) × 93% / 12 → трамо → минимальная база трамо × {rate(P.ss.reta.rate)}.</li>
               <li>Рендимьенто = выручка − расходы − гестория − cuota.</li>
               <li>Gastos de difícil justificación: 5% (макс. 2 000 €) — в 2026 году 5%, 7% было только в 2023.</li>
@@ -147,7 +147,7 @@ export default function Methodology() {
             </ol>
           </Card>
           <Card title="Своя SL" source={["lis_18", "lis_29", "lgss_308", "lirpf_66"]}>
-            <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-fg-2">
+            <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-ink-2">
               <li>Результат = выручка − расходы − гестория. Из него компания платит вам вознаграждение и вашу cuota autónomo societario.</li>
               <li>Cuota societario считается от вознаграждения + дивидендов × 97%, минимальная база с 2026 года — {n2(P.ss.reta.societarioMinBase)} €.</li>
               <li>Прибыль облагается IS {rate(P.is.micro[0][2])} до 50 000 € и {rate(P.is.micro[1][2])} свыше (microempresa); остаток — дивиденды 19–30%.</li>
@@ -168,19 +168,19 @@ export default function Methodology() {
             <ScaleTable scale={P.irpf.savingsScaleHalf.map(([a, b, r]) => [a, b, r * 2] as const)} />
           </Card>
           <Card title="Mínimo personal y familiar (гос. часть)" source={["lirpf_56"]}>
-            <ul className="space-y-1.5 text-sm text-fg-2">
-              <li>На себя: <b className="text-fg">{n0(P.irpf.minimos.personal)} €</b></li>
-              <li>Дети (1-й, 2-й, 3-й, 4-й+): <b className="text-fg">{P.irpf.minimos.descendants.map(n0).join(" / ")} €</b></li>
-              <li>Ребёнок до 3 лет: <b className="text-fg">+{n0(P.irpf.minimos.under3)} €</b></li>
+            <ul className="space-y-1.5 text-sm text-ink-2">
+              <li>На себя: <b className="text-ink">{n0(P.irpf.minimos.personal)} €</b></li>
+              <li>Дети (1-й, 2-й, 3-й, 4-й+): <b className="text-ink">{P.irpf.minimos.descendants.map(n0).join(" / ")} €</b></li>
+              <li>Ребёнок до 3 лет: <b className="text-ink">+{n0(P.irpf.minimos.under3)} €</b></li>
               <li>Пара, подающая декларации раздельно, делит минимум на детей пополам.</li>
             </ul>
           </Card>
           <Card title="Вычеты из базы" source={["lirpf_19", "lirpf_20", "lirpf_84"]}>
-            <ul className="space-y-1.5 text-sm text-fg-2">
-              <li>«Otros gastos» работника: <b className="text-fg">2 000 €</b></li>
-              <li>Reducción art. 20: <b className="text-fg">7 302 €</b> до 14 852 €, ноль с 19 747,50 €</li>
-              <li>Совместная декларация: <b className="text-fg">3 400 €</b> (пара), <b className="text-fg">2 150 €</b> (родитель-одиночка)</li>
-              <li>Вычет SMI (DA 61ª, RDL 5/2026): <b className="text-fg">590,89 €</b> до 17 094 € брутто</li>
+            <ul className="space-y-1.5 text-sm text-ink-2">
+              <li>«Otros gastos» работника: <b className="text-ink">2 000 €</b></li>
+              <li>Reducción art. 20: <b className="text-ink">7 302 €</b> до 14 852 €, ноль с 19 747,50 €</li>
+              <li>Совместная декларация: <b className="text-ink">3 400 €</b> (пара), <b className="text-ink">2 150 €</b> (родитель-одиночка)</li>
+              <li>Вычет SMI (DA 61ª, RDL 5/2026): <b className="text-ink">590,89 €</b> до 17 094 € брутто</li>
             </ul>
           </Card>
         </div>
@@ -192,7 +192,7 @@ export default function Methodology() {
           <Card title="Ставки при бессрочном контракте" source={["orden_2026", "ss_bases"]}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-fg-3">
+                <tr className="text-left text-xs text-ink-3">
                   <th className="py-1.5 font-medium">Взнос</th>
                   <th className="py-1.5 text-right font-medium">Работодатель</th>
                   <th className="py-1.5 text-right font-medium">Работник</th>
@@ -208,28 +208,28 @@ export default function Methodology() {
                   ["AT/EP (CNAE 62)", P.ss.employer.atep, 0],
                 ].map(([l, a, b]) => (
                   <tr key={l as string} className="border-t border-line">
-                    <td className="py-1.5 text-fg-2">{l}</td>
-                    <td className="py-1.5 text-right text-fg">{rate(a as number)}</td>
-                    <td className="py-1.5 text-right text-fg">{rate(b as number)}</td>
+                    <td className="py-1.5 text-ink-2">{l}</td>
+                    <td className="py-1.5 text-right text-ink">{rate(a as number)}</td>
+                    <td className="py-1.5 text-right text-ink">{rate(b as number)}</td>
                   </tr>
                 ))}
                 <tr className="border-t border-line-strong font-semibold">
-                  <td className="py-1.5 text-fg">Итого</td>
-                  <td className="py-1.5 text-right text-fg">{rate(employer)}</td>
-                  <td className="py-1.5 text-right text-fg">{rate(employee)}</td>
+                  <td className="py-1.5 text-ink">Итого</td>
+                  <td className="py-1.5 text-right text-ink">{rate(employer)}</td>
+                  <td className="py-1.5 text-right text-ink">{rate(employee)}</td>
                 </tr>
               </tbody>
             </table>
           </Card>
           <Card title="Базы и взнос солидарности" source={["rdl_3_2026", "lgss_19bis"]}>
-            <ul className="space-y-1.5 text-sm text-fg-2">
-              <li>Максимальная база: <b className="text-fg">{n2(P.ss.maxBaseMonthly)} €/мес</b></li>
-              <li>Минимальная база (группы 4–7) = SMI: <b className="text-fg">{n2(P.ss.minBaseMonthly)} €/мес</b></li>
-              <li className="pt-2 text-fg-3">Солидарность — с части зарплаты выше максимальной базы (работодатель + работник):</li>
+            <ul className="space-y-1.5 text-sm text-ink-2">
+              <li>Максимальная база: <b className="text-ink">{n2(P.ss.maxBaseMonthly)} €/мес</b></li>
+              <li>Минимальная база (группы 4–7) = SMI: <b className="text-ink">{n2(P.ss.minBaseMonthly)} €/мес</b></li>
+              <li className="pt-2 text-ink-3">Солидарность — с части зарплаты выше максимальной базы (работодатель + работник):</li>
               {P.ss.solidarity.map((b, i) => (
                 <li key={i}>
                   {i === 0 ? "до +10%" : i === 1 ? "от +10% до +50%" : "свыше +50%"}:{" "}
-                  <b className="text-fg">{rate(b.employer)} + {rate(b.employee)}</b>
+                  <b className="text-ink">{rate(b.employer)} + {rate(b.employee)}</b>
                 </li>
               ))}
             </ul>
@@ -243,7 +243,7 @@ export default function Methodology() {
           <div className="-mx-2 overflow-x-auto">
             <table className="w-full min-w-[560px] text-sm">
               <thead>
-                <tr className="text-left text-xs text-fg-3">
+                <tr className="text-left text-xs text-ink-3">
                   <th className="px-2 py-1.5 font-medium">Трамо</th>
                   <th className="px-2 py-1.5 font-medium">Доход в месяц, €</th>
                   <th className="px-2 py-1.5 text-right font-medium">Мин. база</th>
@@ -254,19 +254,19 @@ export default function Methodology() {
               <tbody className="tnum">
                 {P.ss.reta.tramos.map(([from, to, min, max, label]) => (
                   <tr key={label} className="border-t border-line">
-                    <td className="px-2 py-1.5 text-fg-2">{label}</td>
-                    <td className="px-2 py-1.5 text-fg-2">
+                    <td className="px-2 py-1.5 text-ink-2">{label}</td>
+                    <td className="px-2 py-1.5 text-ink-2">
                       {from === -Infinity ? `до ${n2(to)}` : to === Infinity ? `свыше ${n2(from)}` : `${n2(from)} – ${n2(to)}`}
                     </td>
-                    <td className="px-2 py-1.5 text-right text-fg-2">{n2(min)}</td>
-                    <td className="px-2 py-1.5 text-right text-fg-2">{n2(max)}</td>
-                    <td className="px-2 py-1.5 text-right font-medium text-fg">{n2(min * P.ss.reta.rate)} €</td>
+                    <td className="px-2 py-1.5 text-right text-ink-2">{n2(min)}</td>
+                    <td className="px-2 py-1.5 text-right text-ink-2">{n2(max)}</td>
+                    <td className="px-2 py-1.5 text-right font-medium text-ink">{n2(min * P.ss.reta.rate)} €</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="mt-3 text-xs leading-relaxed text-fg-3">
+          <p className="mt-3 text-xs leading-relaxed text-ink-3">
             Доход для трамо: рендимьенто по IRPF + сама cuota, минус 7% gastos genéricos (3% для autónomos societarios).
             Минимальная база для societarios с 2026 года — база группы 7 ({n2(P.ss.reta.societarioMinBase)} €): cuota не
             ниже {n2(P.ss.reta.societarioMinBase * P.ss.reta.rate)} €/мес.
@@ -278,19 +278,19 @@ export default function Methodology() {
         </H2>
         <div className="grid gap-4 md:grid-cols-2">
           <Card title="Ставки" source={["lis_29"]}>
-            <ul className="space-y-1.5 text-sm text-fg-2">
-              <li>Microempresa (оборот &lt; 1 млн €): <b className="text-fg">{rate(P.is.micro[0][2])}</b> на первые 50 000 €, <b className="text-fg">{rate(P.is.micro[1][2])}</b> на остальное</li>
-              <li>Empresa de reducida dimensión: <b className="text-fg">23%</b></li>
-              <li>Общая ставка: <b className="text-fg">25%</b></li>
-              <li>Новая компания: <b className="text-fg">15%</b> в первый год с прибылью и следующий — но не если ту же деятельность вы вели как autónomo в прошлом году (art. 29.1.b)</li>
+            <ul className="space-y-1.5 text-sm text-ink-2">
+              <li>Microempresa (оборот &lt; 1 млн €): <b className="text-ink">{rate(P.is.micro[0][2])}</b> на первые 50 000 €, <b className="text-ink">{rate(P.is.micro[1][2])}</b> на остальное</li>
+              <li>Empresa de reducida dimensión: <b className="text-ink">23%</b></li>
+              <li>Общая ставка: <b className="text-ink">25%</b></li>
+              <li>Новая компания: <b className="text-ink">15%</b> в первый год с прибылью и следующий — но не если ту же деятельность вы вели как autónomo в прошлом году (art. 29.1.b)</li>
               <li>В 2027 году microempresa — 17% / 20%.</li>
             </ul>
           </Card>
           <Card title="«Безопасная гавань» art. 18.6 LIS" source={["lis_18"]}>
-            <ul className="space-y-1.5 text-sm text-fg-2">
+            <ul className="space-y-1.5 text-sm text-ink-2">
               <li>Более 75% дохода компании — от профессиональной деятельности (IT-консалтинг: IAE, группа 763).</li>
-              <li>Вознаграждение socios-profesionales ≥ <b className="text-fg">75%</b> результата до этого вознаграждения.</li>
-              <li>И не меньше 1,5 зарплаты сотрудников на похожей должности или, если таких нет, <b className="text-fg">5 × IPREM</b>: буквально 36 000 €, на практике часто 42 000 € — калькулятор берёт {n0(P.socioProfesional.minAbsolute)} €.</li>
+              <li>Вознаграждение socios-profesionales ≥ <b className="text-ink">75%</b> результата до этого вознаграждения.</li>
+              <li>И не меньше 1,5 зарплаты сотрудников на похожей должности или, если таких нет, <b className="text-ink">5 × IPREM</b>: буквально 36 000 €, на практике часто 42 000 € — калькулятор берёт {n0(P.socioProfesional.minAbsolute)} €.</li>
             </ul>
           </Card>
         </div>
@@ -302,28 +302,28 @@ export default function Methodology() {
           {REGION_ORDER.map((id) => {
             const r = REGIONS[id];
             return (
-              <details key={id} className="panel group p-5 open:pb-6">
+              <details key={id} className="card group p-5 open:pb-6">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
                   <span>
-                    <span className="block text-base font-semibold text-fg">{r.name}</span>
-                    <span className="tnum mt-0.5 block text-xs text-fg-3">
+                    <span className="serif block text-lg font-medium text-ink">{r.name}</span>
+                    <span className="tnum mt-0.5 block text-xs text-ink-3">
                       {rate(r.scale[0][2])} → {rate(r.scale[r.scale.length - 1][2])} · {r.scale.length} ступеней
                       {r.minimos ? " · свои минимумы" : ""}
                     </span>
                   </span>
-                  <svg viewBox="0 0 20 20" className="size-4 text-fg-3 transition group-open:rotate-180" aria-hidden>
+                  <svg viewBox="0 0 20 20" className="size-4 text-ink-3 transition group-open:rotate-180" aria-hidden>
                     <path d="M5 8l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   </svg>
                 </summary>
                 <div className="mt-4">
                   <ScaleTable scale={r.scale} />
                   {r.minimos && (
-                    <p className="mt-3 text-xs leading-relaxed text-fg-2">
+                    <p className="mt-3 text-xs leading-relaxed text-ink-2">
                       Свои минимумы: на себя {n2(r.minimos.personal)} €; дети {r.minimos.descendants.map(n2).join(" / ")} €; до 3 лет +{n2(r.minimos.under3)} €.
                     </p>
                   )}
-                  {r.note && <p className="mt-2 text-xs leading-relaxed text-fg-3">{r.note}</p>}
-                  <a href={r.sourceUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-fg-2 underline decoration-line-strong underline-offset-4 hover:text-sun">
+                  {r.note && <p className="mt-2 text-xs leading-relaxed text-ink-3">{r.note}</p>}
+                  <a href={r.sourceUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-ink-2 underline decoration-[var(--line-strong)] underline-offset-4 hover:text-accent">
                     Текст закона в BOE ↗
                   </a>
                 </div>
@@ -335,8 +335,8 @@ export default function Methodology() {
         <H2 id="limits" lead="Модель честно считает главное, но не всё. Вот что сознательно не учтено.">
           Упрощения и допущения
         </H2>
-        <div className="panel p-5 sm:p-6">
-          <ul className="grid gap-x-8 gap-y-3 text-sm leading-relaxed text-fg-2 md:grid-cols-2">
+        <div className="card p-5 sm:p-6">
+          <ul className="grid gap-x-8 gap-y-3 text-sm leading-relaxed text-ink-2 md:grid-cols-2">
             <li>Региональные вычеты (аренда, рождение детей, учёба, спорт и т.д.) и государственный вычет для работающих матерей (art. 81) не учтены.</li>
             <li>Доходы только из одного источника; нет аренды, инвестиций, пенсионных планов, ипотеки до 2013 года.</li>
             <li>Autónomo платит по минимальной базе своего трамо. Сокращение art. 32.2 (один клиент / TRADE) не применяется.</li>
@@ -352,9 +352,9 @@ export default function Methodology() {
         <ul className="grid gap-2 md:grid-cols-2">
           {Object.values(SOURCES).map((s) => (
             <li key={s.url}>
-              <a href={s.url} target="_blank" rel="noreferrer" className="panel flex items-start justify-between gap-3 p-4 text-sm text-fg-2 transition hover:text-fg">
+              <a href={s.url} target="_blank" rel="noreferrer" className="card flex items-start justify-between gap-3 p-4 text-sm text-ink-2 transition hover:text-ink">
                 <span>{s.title}</span>
-                <span className="text-fg-3">↗</span>
+                <span className="text-ink-3">↗</span>
               </a>
             </li>
           ))}

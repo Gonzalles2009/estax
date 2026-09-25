@@ -11,10 +11,10 @@ export interface Segment {
 }
 
 export const SEGMENT_META: Record<SegmentKey, { label: string; color: string }> = {
-  net: { label: "Вам", color: "var(--color-seg-net)" },
-  tax: { label: "Налоги", color: "var(--color-seg-tax)" },
-  ss: { label: "Seguridad Social", color: "var(--color-seg-ss)" },
-  cost: { label: "Расходы", color: "var(--color-seg-cost)" },
+  net: { label: "Вам", color: "var(--f-you)" },
+  tax: { label: "Hacienda", color: "var(--f-tax)" },
+  ss: { label: "Seguridad Social", color: "var(--f-ss)" },
+  cost: { label: "Расходы", color: "var(--f-cost)" },
 };
 
 /** Бюджет → 4 крупные части для полосок */

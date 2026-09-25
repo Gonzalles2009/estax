@@ -21,7 +21,7 @@ export function Breakdown({ results }: { results: RegimeResult[] }) {
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <ul className="flex flex-wrap gap-x-4 gap-y-1.5" aria-label="Легенда">
           {(Object.keys(SEGMENT_META) as SegmentKey[]).map((k) => (
-            <li key={k} className="flex items-center gap-2 text-xs text-fg-2">
+            <li key={k} className="flex items-center gap-2 text-xs text-ink-2">
               <span className="size-2.5 rounded-[3px]" style={{ background: SEGMENT_META[k].color }} />
               {SEGMENT_META[k].label}
             </li>
@@ -30,7 +30,7 @@ export function Breakdown({ results }: { results: RegimeResult[] }) {
         <button
           type="button"
           onClick={() => setTable((v) => !v)}
-          className="rounded-full border border-line px-3 py-1 text-xs text-fg-2 transition hover:border-line-strong hover:text-fg"
+          className="rounded-full border border-line px-3 py-1 text-xs text-ink-2 transition hover:border-line-strong hover:text-ink"
         >
           {table ? "Показать полосами" : "Показать таблицей"}
         </button>
@@ -59,13 +59,13 @@ export function Breakdown({ results }: { results: RegimeResult[] }) {
                   onMouseLeave={() => set({ highlight: null })}
                 >
                   <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                    <span className="flex items-center gap-2 text-sm font-medium text-fg">
+                    <span className="flex items-center gap-2 text-sm font-medium text-ink">
                       <span className="size-2 rounded-full" style={{ background: REGIME_META[r.regime].color }} />
                       {REGIME_META[r.regime].name}
                     </span>
-                    <span className="tnum text-xs text-fg-3">
-                      вам <span className="font-semibold text-fg">{pct(r.netAnnual / total, 1)}</span> · государству{" "}
-                      <span className="font-semibold text-fg">{pct(r.effectiveRate, 1)}</span>
+                    <span className="tnum text-xs text-ink-3">
+                      вам <span className="font-semibold text-ink">{pct(r.netAnnual / total, 1)}</span> · государству{" "}
+                      <span className="font-semibold text-ink">{pct(r.effectiveRate, 1)}</span>
                     </span>
                   </div>
                   <div className="relative flex h-9 gap-[2px]">
@@ -85,7 +85,7 @@ export function Breakdown({ results }: { results: RegimeResult[] }) {
                           {s.value / total > 0.12 && (
                             <span
                               className={`tnum absolute inset-0 flex items-center whitespace-nowrap px-2.5 text-[11px] font-semibold ${
-                                s.key === "net" ? "text-ink" : "text-white"
+                                "text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.35)]"
                               }`}
                             >
                               {n0(s.value / 12)} €
@@ -103,14 +103,14 @@ export function Breakdown({ results }: { results: RegimeResult[] }) {
                         exit={{ opacity: 0, height: 0 }}
                         className="overflow-hidden"
                       >
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2 text-xs text-fg-2">
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2 text-xs text-ink-2">
                           {segs
                             .find((s) => s.key === hover.key)!
                             .parts.filter((p) => p.value > 0.5)
                             .map((p) => (
                               <span key={p.label}>
-                                {p.label}: <span className="tnum font-semibold text-fg">{eur(p.value)}</span>
-                                <span className="text-fg-3"> в год</span>
+                                {p.label}: <span className="tnum font-semibold text-ink">{eur(p.value)}</span>
+                                <span className="text-ink-3"> в год</span>
                               </span>
                             ))}
                         </div>
@@ -131,7 +131,7 @@ export function Breakdown({ results }: { results: RegimeResult[] }) {
           >
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="text-left text-xs text-fg-3">
+                <tr className="text-left text-xs text-ink-3">
                   <th className="px-2 py-2 font-medium">Режим, € в год</th>
                   <th className="px-2 py-2 text-right font-medium">Вам</th>
                   <th className="px-2 py-2 text-right font-medium">IRPF</th>
@@ -145,14 +145,14 @@ export function Breakdown({ results }: { results: RegimeResult[] }) {
               <tbody className="tnum">
                 {shown.map((r) => (
                   <tr key={r.regime} className="border-t border-line">
-                    <td className="px-2 py-2 text-fg">{REGIME_META[r.regime].name}</td>
-                    <td className="px-2 py-2 text-right font-semibold text-fg">{n0(r.breakdown.net)}</td>
-                    <td className="px-2 py-2 text-right text-fg-2">{n0(r.breakdown.irpf)}</td>
-                    <td className="px-2 py-2 text-right text-fg-2">{n0(r.breakdown.dividendTax)}</td>
-                    <td className="px-2 py-2 text-right text-fg-2">{n0(r.breakdown.corporateTax)}</td>
-                    <td className="px-2 py-2 text-right text-fg-2">{n0(r.breakdown.ssWorker)}</td>
-                    <td className="px-2 py-2 text-right text-fg-2">{n0(r.breakdown.ssEmployer)}</td>
-                    <td className="px-2 py-2 text-right text-fg-2">{n0(r.breakdown.expenses + r.breakdown.gestoria)}</td>
+                    <td className="px-2 py-2 text-ink">{REGIME_META[r.regime].name}</td>
+                    <td className="px-2 py-2 text-right font-semibold text-ink">{n0(r.breakdown.net)}</td>
+                    <td className="px-2 py-2 text-right text-ink-2">{n0(r.breakdown.irpf)}</td>
+                    <td className="px-2 py-2 text-right text-ink-2">{n0(r.breakdown.dividendTax)}</td>
+                    <td className="px-2 py-2 text-right text-ink-2">{n0(r.breakdown.corporateTax)}</td>
+                    <td className="px-2 py-2 text-right text-ink-2">{n0(r.breakdown.ssWorker)}</td>
+                    <td className="px-2 py-2 text-right text-ink-2">{n0(r.breakdown.ssEmployer)}</td>
+                    <td className="px-2 py-2 text-right text-ink-2">{n0(r.breakdown.expenses + r.breakdown.gestoria)}</td>
                   </tr>
                 ))}
               </tbody>

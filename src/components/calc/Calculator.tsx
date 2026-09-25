@@ -2,18 +2,22 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { fromQuery, toQuery, useCalc } from "@/store/calc";
 import { REGIME_META } from "@/lib/regimes";
+import { REGIME_IDS } from "@/lib/tax/engine";
 import { n0 } from "@/lib/format";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
-import { Answer } from "./Answer";
-import { BudgetControl } from "./BudgetControl";
 import { Breakdown } from "./Breakdown";
 import { ChartPanel } from "./ChartPanel";
+import { FlowSection, useCurrentRegime } from "./FlowSection";
+import { Hero, budgetToPos, posToBudget } from "./Hero";
 import { Ranking } from "./Ranking";
-import { Settings } from "./Settings";
+import { ReceiptSection } from "./Receipt";
 import { Trace } from "./Trace";
 import { useResults } from "./useResults";
+
+const ease = [0.22, 1, 0.36, 1] as const;
 
 function useUrlSync() {
   useEffect(() => {
@@ -37,13 +41,13 @@ function useUrlSync() {
   }, []);
 }
 
-function Reveal({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+export function Reveal({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.8, delay, ease }}
       className={className}
     >
       {children}
@@ -51,81 +55,138 @@ function Reveal({ children, className, delay = 0 }: { children: React.ReactNode;
   );
 }
 
+export function SectionTitle({ eyebrow, title, text }: { eyebrow: string; title: string; text?: string }) {
+  return (
+    <header className="mb-8 max-w-2xl">
+      <div className="eyebrow mb-3">{eyebrow}</div>
+      <h2 className="serif text-4xl font-medium tracking-tight text-ink sm:text-5xl">{title}</h2>
+      {text && <p className="mt-4 text-[16px] leading-relaxed text-ink-2">{text}</p>}
+    </header>
+  );
+}
+
+function RegimeChips() {
+  const { selected, toggle, set, highlight } = useCalc(
+    useShallow((s) => ({ selected: s.selected, toggle: s.toggle, set: s.set, highlight: s.highlight })),
+  );
+  return (
+    <div className="flex flex-wrap gap-1.5" role="group" aria-label="Какие режимы сравнивать">
+      {REGIME_IDS.map((id) => {
+        const on = selected.includes(id);
+        const meta = REGIME_META[id];
+        return (
+          <motion.button
+            key={id}
+            type="button"
+            whileTap={{ scale: 0.94 }}
+            aria-pressed={on}
+            onClick={() => toggle(id)}
+            onMouseEnter={() => on && set({ highlight: id })}
+            onMouseLeave={() => set({ highlight: null })}
+            className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              on ? "border-line-strong bg-surface text-ink" : "border-dashed border-line-strong text-ink-3 hover:text-ink-2"
+            } ${highlight === id ? "bg-ink/[0.06]" : ""}`}
+          >
+            <span
+              className="size-2.5 rounded-full transition-all"
+              style={{ background: on ? meta.color : "transparent", boxShadow: on ? "none" : `inset 0 0 0 1.5px ${meta.color}` }}
+            />
+            {meta.short}
+          </motion.button>
+        );
+      })}
+    </div>
+  );
+}
+
+type Tab = "chart" | "structure";
+
+function Comparison({ results }: { results: ReturnType<typeof useResults> }) {
+  const [tab, setTab] = useState<Tab>("chart");
+  return (
+    <section id="compare" className="mx-auto mt-28 max-w-[1240px] scroll-mt-6 px-4 sm:px-8">
+      <Reveal>
+        <SectionTitle
+          eyebrow="Сравнение"
+          title="Все режимы рядом"
+          text="Добавьте первый год autónomo или агрессивную SL, чтобы увидеть временные льготы и налоговый риск. Клик по режиму показывает его поток денег и чек."
+        />
+      </Reveal>
+      <div className="grid gap-6 lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-8">
+        <Reveal className="min-w-0 space-y-4">
+          <RegimeChips />
+          <Ranking results={results} />
+        </Reveal>
+        <Reveal delay={0.08} className="min-w-0">
+          <div className="card p-5 sm:p-7">
+            <div role="tablist" className="mb-6 flex gap-1 border-b border-line">
+              {(
+                [
+                  ["chart", "По всем суммам"],
+                  ["structure", "Куда уходят деньги"],
+                ] as [Tab, string][]
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  role="tab"
+                  aria-selected={tab === id}
+                  onClick={() => setTab(id)}
+                  className={`relative -mb-px px-3 pb-3 text-sm font-medium transition-colors ${tab === id ? "text-ink" : "text-ink-3 hover:text-ink-2"}`}
+                >
+                  {label}
+                  {tab === id && <motion.span layoutId="cmp-tab" className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-ink" />}
+                </button>
+              ))}
+            </div>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={tab}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.25 }}
+              >
+                {tab === "chart" ? <ChartPanel /> : <Breakdown results={results} />}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
 export function Calculator() {
   useUrlSync();
   const results = useResults();
-  const sentinel = useRef<HTMLDivElement>(null);
+  const flowRef = useRef<HTMLDivElement>(null);
   const [dock, setDock] = useState(false);
 
   useEffect(() => {
-    const el = sentinel.current;
+    const el = flowRef.current;
     if (!el) return;
-    const io = new IntersectionObserver(([e]) => setDock(!e.isIntersecting && e.boundingClientRect.top < 0));
+    const io = new IntersectionObserver(([e]) => setDock(e.boundingClientRect.top < 0));
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
   return (
     <>
-      <div className="mx-auto grid max-w-[1320px] grid-cols-1 gap-5 px-4 sm:px-6 lg:grid-cols-[380px_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:gap-6">
-        {/* Порядок на телефоне: сумма → ответ → настройки. На десктопе сумма и настройки — левая колонка. */}
-        <Reveal className="lg:col-start-1 lg:row-start-1">
-          <aside className="panel p-5 sm:p-6">
-            <BudgetControl />
-            <div ref={sentinel} />
-          </aside>
-        </Reveal>
-
-        <div className="min-w-0 space-y-5 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:space-y-6">
-          <Reveal delay={0.05}>
-            <section className="panel relative overflow-hidden p-5 sm:p-7">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full opacity-40 blur-3xl"
-                style={{ background: "radial-gradient(circle, #ffb224, transparent 65%)" }}
-              />
-              <div className="relative grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] xl:items-start [&>*]:min-w-0">
-                <Answer results={results} />
-                <Ranking results={results} />
-              </div>
-            </section>
-          </Reveal>
-
-          <Reveal delay={0.1}>
-            <section className="panel p-5 sm:p-7">
-              <ChartPanel />
-            </section>
-          </Reveal>
-        </div>
-
-        <Reveal className="lg:col-start-1 lg:row-start-2 lg:self-start" delay={0.05}>
-          <aside className="panel p-5 sm:p-6" aria-label="Параметры">
-            <Settings />
-          </aside>
-        </Reveal>
+      <Hero results={results} />
+      <div ref={flowRef}>
+        <FlowSection results={results} />
       </div>
+      <Comparison results={results} />
+      <ReceiptSection results={results} />
 
-      <section id="where" className="mx-auto mt-16 max-w-[1320px] scroll-mt-6 px-4 sm:px-6">
-        <Reveal>
-          <SectionTitle
-            eyebrow="Структура бюджета"
-            title="Куда уходит каждый евро"
-            text="Одна и та же сумма, разные получатели. Наведите на полосу — увидите детали. Цифры на полосах — € в месяц."
-          />
-          <div className="panel p-5 sm:p-7">
-            <Breakdown results={results} />
-          </div>
-        </Reveal>
-      </section>
-
-      <section id="how" className="mx-auto mt-16 max-w-[1320px] scroll-mt-6 px-4 sm:px-6">
+      <section id="how" className="mx-auto mt-28 max-w-[1240px] scroll-mt-6 px-4 sm:px-8">
         <Reveal>
           <SectionTitle
             eyebrow="Прозрачность"
             title="Как посчитана каждая цифра"
-            text="Пошаговый расчёт для выбранного режима. Серые метки ведут на статьи закона в BOE — можно проверить самому."
+            text="Пошаговый расчёт выбранного режима. Метки ведут на статьи закона в BOE — можно проверить самому."
           />
-          <div className="panel p-5 sm:p-7">
+          <div className="card p-5 sm:p-8">
             <Trace results={results} />
           </div>
         </Reveal>
@@ -136,45 +197,48 @@ export function Calculator() {
   );
 }
 
-export function SectionTitle({ eyebrow, title, text }: { eyebrow: string; title: string; text?: string }) {
-  return (
-    <header className="mb-6 max-w-2xl">
-      <div className="eyebrow mb-2">{eyebrow}</div>
-      <h2 className="text-3xl font-semibold tracking-tight text-fg sm:text-4xl">{title}</h2>
-      {text && <p className="mt-3 text-[15px] leading-relaxed text-fg-2">{text}</p>}
-    </header>
-  );
-}
-
 function MobileDock({ show, results }: { show: boolean; results: ReturnType<typeof useResults> }) {
-  const selected = useCalc((s) => s.selected);
-  const best = results.filter((r) => selected.includes(r.regime)).sort((a, b) => b.netAnnual - a.netAnnual)[0];
+  const { budget, set } = useCalc(useShallow((s) => ({ budget: s.budget, set: s.set })));
+  const { current } = useCurrentRegime(results);
+  const pos = budgetToPos(budget);
   return (
     <AnimatePresence>
       {show && (
         <motion.div
-          initial={{ y: 120 }}
+          initial={{ y: 140 }}
           animate={{ y: 0 }}
-          exit={{ y: 120 }}
+          exit={{ y: 140 }}
           transition={{ type: "spring", stiffness: 320, damping: 32 }}
-          className="fixed inset-x-3 bottom-3 z-40 rounded-3xl border border-line-strong bg-panel-2/90 px-4 pb-2 pt-3 shadow-2xl backdrop-blur-xl lg:hidden"
+          className="card fixed inset-x-3 bottom-3 z-40 !rounded-[26px] px-5 pb-2 pt-3 backdrop-blur-xl lg:hidden"
           style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
         >
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <BudgetControl compact />
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <div className="text-[11px] text-ink-3">Сумма в год</div>
+              <div className="serif tnum text-2xl font-medium leading-tight text-ink">{n0(budget)} €</div>
             </div>
-            <div className="shrink-0 text-right">
-              <div className="flex items-center justify-end gap-1.5 text-[11px] text-fg-3">
-                <span className="size-1.5 rounded-full" style={{ background: REGIME_META[best.regime].color }} />
-                {REGIME_META[best.regime].short}
+            <div className="text-right">
+              <div className="flex items-center justify-end gap-1.5 text-[11px] text-ink-3">
+                <span className="size-1.5 rounded-full" style={{ background: REGIME_META[current.regime].color }} />
+                {REGIME_META[current.regime].short}
               </div>
-              <div className="text-lg font-semibold text-fg">
-                <AnimatedNumber className="tnum" value={best.netMonthly} format={n0} />
-                <span className="ml-1 text-xs text-fg-3">€/мес</span>
+              <div className="serif text-2xl font-medium leading-tight text-ink">
+                <AnimatedNumber className="tnum" value={current.netMonthly} format={n0} />
+                <span className="ml-1 font-sans text-xs text-ink-3">€/мес</span>
               </div>
             </div>
           </div>
+          <input
+            type="range"
+            aria-label="Годовая сумма"
+            className="range"
+            min={0}
+            max={1000}
+            step={1}
+            value={pos}
+            style={{ ["--fill" as string]: `${pos / 10}%` }}
+            onChange={(e) => set({ budget: posToBudget(Number(e.target.value)) })}
+          />
         </motion.div>
       )}
     </AnimatePresence>

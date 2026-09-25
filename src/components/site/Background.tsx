@@ -1,29 +1,40 @@
-/** Живой фон: медленно дрейфующие тёплые пятна + тонкая сетка. Только CSS-трансформации. */
+/** Бумажное зерно и тёплые отсветы. Только CSS, без JS. */
+const GRAIN = `url("data:image/svg+xml;utf8,${encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.35  0 0 0 0 0.28  0 0 0 0 0.2  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>`,
+).replace(/%2523/g, "%23")}")`;
+
 export function Background() {
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <div
-        className="absolute -left-[20%] -top-[30%] h-[80vh] w-[80vw] animate-drift-a rounded-full opacity-[0.22]"
-        style={{ background: "radial-gradient(closest-side, #ff8a3d, transparent)" }}
+        className="absolute -left-[15%] -top-[25%] h-[75vh] w-[70vw] rounded-full opacity-40 blur-3xl dark:opacity-25"
+        style={{ background: "radial-gradient(closest-side, color-mix(in oklab, var(--f-you) 55%, transparent), transparent)" }}
       />
       <div
-        className="absolute -right-[25%] top-[10%] h-[70vh] w-[70vw] animate-drift-b rounded-full opacity-[0.16]"
-        style={{ background: "radial-gradient(closest-side, #ff4d6d, transparent)" }}
+        className="absolute -right-[20%] top-[5%] h-[65vh] w-[60vw] rounded-full opacity-30 blur-3xl dark:opacity-20"
+        style={{ background: "radial-gradient(closest-side, color-mix(in oklab, var(--accent) 50%, transparent), transparent)" }}
       />
-      <div
-        className="absolute bottom-[-30%] left-[20%] h-[70vh] w-[60vw] animate-drift-a rounded-full opacity-[0.12]"
-        style={{ background: "radial-gradient(closest-side, #3d7bff, transparent)", animationDelay: "-12s" }}
-      />
-      <div
-        className="absolute inset-0 opacity-[0.35]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px)",
-          backgroundSize: "56px 56px",
-          maskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, black, transparent 75%)",
-          WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, black, transparent 75%)",
-        }}
-      />
+      <div className="absolute inset-0" style={{ backgroundImage: GRAIN, opacity: "var(--grain-opacity)" }} />
     </div>
+  );
+}
+
+/** Геометрия средиземноморской плитки-азулехо — тонкими линиями, как водяной знак */
+export function Azulejo({ className = "" }: { className?: string }) {
+  return (
+    <svg aria-hidden className={className} width="100%" height="100%">
+      <defs>
+        <pattern id="azulejo" width="72" height="72" patternUnits="userSpaceOnUse">
+          <g fill="none" stroke="currentColor" strokeWidth="1">
+            <rect x="0.5" y="0.5" width="71" height="71" />
+            <circle cx="36" cy="36" r="22" />
+            <path d="M36 6 L44 28 L66 36 L44 44 L36 66 L28 44 L6 36 L28 28 Z" />
+            <path d="M0 0 Q18 18 0 36 M72 0 Q54 18 72 36 M0 72 Q18 54 0 36 M72 72 Q54 54 72 36" />
+            <circle cx="36" cy="36" r="4" />
+          </g>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#azulejo)" />
+    </svg>
   );
 }
