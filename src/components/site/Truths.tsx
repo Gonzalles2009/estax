@@ -52,14 +52,8 @@ export function Truths() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-40px" }}
           transition={{ duration: 0.6, delay: (i % 3) * 0.08, ease: [0.22, 1, 0.36, 1] }}
-          whileHover={{ y: -4 }}
-          className="card group relative overflow-hidden p-6"
+          className="card relative p-6"
         >
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -right-16 -top-16 size-40 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-40"
-            style={{ background: "radial-gradient(circle, var(--f-you), transparent 70%)" }}
-          />
           <div className="eyebrow">{t.kicker}</div>
           <h3 className="serif mt-3 text-[22px] font-medium leading-snug tracking-tight text-ink">{t.title}</h3>
           <p className="mt-3 text-[14px] leading-relaxed text-ink-2">{t.text}</p>

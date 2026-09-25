@@ -64,7 +64,7 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
       title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-      className="relative grid size-9 place-items-center overflow-hidden rounded-full border border-line text-ink-2 transition hover:border-line-strong hover:text-ink"
+      className="relative grid size-9 place-items-center overflow-hidden rounded-lg border border-line text-ink-2 transition hover:border-line-strong hover:text-ink"
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.svg

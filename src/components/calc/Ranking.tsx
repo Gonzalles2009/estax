@@ -12,9 +12,10 @@ import { useCurrentRegime } from "./useCurrent";
 import type { Availability } from "@/lib/beckham";
 
 function fmtLoss(v: number, isBest: boolean, a: Availability) {
+  // Доступность важнее «лучшего»: непроверенный режим лучший, только если других не выбрано
   if (a === "no") return "вам недоступен";
+  if (a === "check") return v < -0.5 ? `+${n0(-v)} €, если доступен` : Math.abs(v) < 0.5 ? "если доступен" : `−${n0(v)} € в месяц`;
   if (isBest) return "лучший вариант";
-  if (a === "check" && v < -0.5) return `+${n0(-v)} €, если доступен`;
   return Math.abs(v) < 0.5 ? "так же" : `−${n0(v)} € в месяц`;
 }
 
@@ -52,7 +53,7 @@ export function Ranking({ results }: { results: RegimeResult[] }) {
                   onMouseLeave={() => set({ highlight: null })}
                   onFocus={() => set({ highlight: r.regime })}
                   onBlur={() => set({ highlight: null })}
-                  className={`group relative w-full overflow-hidden rounded-2xl border px-4 py-3.5 text-left transition ${
+                  className={`group relative w-full overflow-hidden rounded-[10px] border px-4 py-3.5 text-left transition ${
                     isBest ? "border-line-strong bg-surface" : "border-line bg-surface/50 hover:border-line-strong hover:bg-surface"
                   } ${a === "check" ? "border-dashed" : ""} ${a === "no" ? "opacity-55 hover:opacity-80" : ""}`}
                 >
@@ -65,17 +66,15 @@ export function Ranking({ results }: { results: RegimeResult[] }) {
                   )}
                   <div className="relative flex items-center gap-3">
                     <span className="serif tnum w-5 text-lg text-ink-3">{rank}</span>
-                    <span className="h-9 w-1 shrink-0 rounded-full" style={{ background: meta.color }} />
+                    <span className="h-9 w-[3px] shrink-0 rounded-[1px]" style={{ background: meta.color }} />
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         <span className="truncate text-[15px] font-semibold text-ink">{meta.name}</span>
                         {a === "check" && (
-                          <span className="shrink-0 rounded-full border border-line-strong px-1.5 py-px text-[10px] font-medium text-ink-3">
-                            условно
-                          </span>
+                          <span className="shrink-0 text-[11px] text-ink-3">условно</span>
                         )}
                         {meta.risk && (
-                          <span className="shrink-0 rounded-full border border-f-tax/40 px-1.5 py-px text-[10px] font-medium text-f-tax">
+                          <span className="shrink-0 text-[11px] font-medium text-f-tax">
                             {meta.risk}
                           </span>
                         )}
@@ -90,11 +89,11 @@ export function Ranking({ results }: { results: RegimeResult[] }) {
                       <span className={`tnum block text-xs ${isBest ? "font-medium text-ink-2" : "text-ink-3"}`}>{fmtLoss(loss, isBest, a)}</span>
                     </span>
                   </div>
-                  <div className="relative mt-3 flex h-1.5 gap-[2px] overflow-hidden rounded-full">
+                  <div className="relative mt-3 flex h-1.5 gap-[2px] overflow-hidden rounded-[2px]">
                     {segmentsOf(r).map((s) => (
                       <motion.span
                         key={s.key}
-                        className="h-full first:rounded-l-full last:rounded-r-full"
+                        className="h-full"
                         style={{ background: s.color }}
                         initial={false}
                         animate={{ flexGrow: Math.max(0, s.value) }}

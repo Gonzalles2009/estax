@@ -14,42 +14,12 @@ import { useBeckhamVerdict, useCurrentRegime } from "./useCurrent";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-const PILL: Record<BeckhamStatus, { label: string; cls: string }> = {
-  unknown: { label: "не проверено", cls: "border-line-strong text-ink-3" },
-  yes: { label: "доступен", cls: "border-ok/40 bg-ok/10 text-ok" },
-  maybe: { label: "возможно", cls: "border-f-you/50 bg-f-you/10 text-f-you" },
-  no: { label: "недоступен", cls: "border-f-tax/40 bg-f-tax/10 text-f-tax" },
+const STATUS_CLS: Record<BeckhamStatus, string> = {
+  unknown: "text-ink-2",
+  yes: "text-ok",
+  maybe: "text-f-you",
+  no: "text-f-tax",
 };
-
-function StatusIcon({ status }: { status: BeckhamStatus }) {
-  const color = status === "yes" ? "var(--ok)" : status === "no" ? "var(--f-tax)" : status === "maybe" ? "var(--f-you)" : "var(--r-beckham)";
-  return (
-    <span className="relative grid size-9 shrink-0 place-items-center rounded-full" style={{ background: `color-mix(in oklab, ${color} 14%, transparent)` }}>
-      <AnimatePresence mode="popLayout" initial={false}>
-        <motion.svg
-          key={status}
-          viewBox="0 0 20 20"
-          className="size-4"
-          initial={{ scale: 0.4, opacity: 0, rotate: -30 }}
-          animate={{ scale: 1, opacity: 1, rotate: 0 }}
-          exit={{ scale: 0.4, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 420, damping: 24 }}
-          aria-hidden
-          fill="none"
-          stroke={color}
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          {status === "yes" && <path d="M4.5 10.5l3.5 3.5 7.5-8" />}
-          {status === "no" && <path d="M5.5 5.5l9 9M14.5 5.5l-9 9" />}
-          {status === "maybe" && <path d="M10 5.5v5.5M10 14.5v.01" />}
-          {status === "unknown" && <path d="M7.6 7.6a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.4M10 14.6v.01" />}
-        </motion.svg>
-      </AnimatePresence>
-    </span>
-  );
-}
 
 /**
  * Проверка права на Ley Beckham: несколько вопросов по art. 93 LIRPF.
@@ -77,16 +47,19 @@ export function BeckhamCheck({ results, compact = false }: { results: RegimeResu
   };
 
   const questions = visibleQuestions(answers, verdict);
-  const pill = PILL[verdict.status];
-  const subtitle =
+  // Строка статуса под заголовком: цветное слово + пояснение, без плашек
+  const lower = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
+  const [statusWord, statusRest] =
     verdict.status === "unknown"
-      ? "24% вместо шкалы до 47% — только для недавно переехавших по работе"
-      : verdict.status === "yes" && verdict.until
-        ? `${verdict.title} включительно`
-        : verdict.title;
+      ? ["Не проверено.", "24% вместо шкалы до 47% — только для недавно переехавших по работе"]
+      : verdict.status === "yes"
+        ? [verdict.until ? `${verdict.title} включительно` : verdict.title, ""]
+        : verdict.status === "maybe"
+          ? ["Возможно, доступен", "— зависит от условий ниже"]
+          : ["Недоступен:", lower(verdict.title)];
 
   return (
-    <div id={compact ? undefined : "beckham-check"} className={`card scroll-mt-24 overflow-hidden ${compact ? "!rounded-[20px]" : ""}`}>
+    <div id={compact ? undefined : "beckham-check"} className="card scroll-mt-24 overflow-hidden">
       <button
         type="button"
         aria-expanded={open}
@@ -94,15 +67,13 @@ export function BeckhamCheck({ results, compact = false }: { results: RegimeResu
         onClick={() => set({ checkOpen: !open })}
         className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-ink/[0.03] sm:px-5"
       >
-        <StatusIcon status={verdict.status} />
         <span className="min-w-0 flex-1">
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-[15px] font-semibold text-ink">Ley Beckham — доступен ли вам?</span>
-            <span className={`rounded-full border px-2 py-px text-[11px] font-medium ${pill.cls}`}>{pill.label}</span>
+          <span className="block text-[15px] font-semibold text-ink">Ley Beckham — доступен ли вам?</span>
+          <span className="mt-0.5 block text-xs leading-snug text-ink-3">
+            <span className={`font-medium ${STATUS_CLS[verdict.status]}`}>{statusWord}</span> {statusRest}
           </span>
-          <span className="mt-0.5 block text-xs leading-snug text-ink-3">{subtitle}</span>
         </span>
-        {verdict.status !== "no" && Math.abs(gain) >= 0.5 && (
+        {!compact && verdict.status !== "no" && Math.abs(gain) >= 0.5 && (
           <span className="hidden shrink-0 text-right sm:block">
             <span className={`serif tnum block text-lg font-medium leading-tight ${gain > 0 ? "text-ink" : "text-ink-3"}`}>
               {gain > 0 ? "+" : "−"}
@@ -152,7 +123,7 @@ export function BeckhamCheck({ results, compact = false }: { results: RegimeResu
                                   aria-pressed={on}
                                   whileTap={{ scale: 0.95 }}
                                   onClick={() => answer(q.key, o.value)}
-                                  className={`tnum rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors ${
+                                  className={`tnum rounded-md border px-3 py-1.5 text-[13px] font-medium transition-colors ${
                                     on ? "border-ink bg-ink text-bg" : "border-line-strong text-ink-2 hover:border-ink/40 hover:text-ink"
                                   }`}
                                 >
@@ -175,7 +146,7 @@ export function BeckhamCheck({ results, compact = false }: { results: RegimeResu
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.25 }}
-                  className={`mt-5 rounded-2xl border p-4 ${
+                  className={`mt-5 rounded-[10px] border p-4 ${
                     verdict.status === "yes"
                       ? "border-ok/30 bg-ok/[0.06]"
                       : verdict.status === "no"

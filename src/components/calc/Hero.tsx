@@ -151,11 +151,6 @@ function HeroResult({ results }: { results: RegimeResult[] }) {
       transition={{ duration: 0.9, delay: 0.5, ease }}
       className="card relative overflow-hidden p-6 lg:sticky lg:top-8 lg:self-start"
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full opacity-40 blur-3xl"
-        style={{ background: "radial-gradient(circle, var(--f-you), transparent 70%)" }}
-      />
       <div className="relative">
         <div className="eyebrow">Останется вам</div>
         <div className="serif tnum mt-3 text-[56px] font-medium leading-none tracking-[-0.03em] text-ink">
@@ -169,17 +164,19 @@ function HeroResult({ results }: { results: RegimeResult[] }) {
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: -8, filter: "blur(4px)" }}
             transition={{ duration: 0.3 }}
-            className="mt-3 inline-flex items-center gap-2 rounded-full border border-line px-3 py-1 text-sm font-medium text-ink"
+            className="mt-3 text-sm text-ink-2"
           >
-            <span className="size-2 rounded-full" style={{ background: meta.color }} />
-            {meta.name}
+            в режиме{" "}
+            <span className="font-medium text-ink underline decoration-2 underline-offset-4" style={{ textDecorationColor: meta.color }}>
+              {meta.name}
+            </span>
           </motion.div>
         </AnimatePresence>
-        <div className="mt-5 flex h-2 gap-[2px] overflow-hidden rounded-full">
+        <div className="mt-5 flex h-2 gap-[2px] overflow-hidden rounded-[2px]">
           {segmentsOf(current).map((sg) => (
             <motion.span
               key={sg.key}
-              className="h-full first:rounded-l-full last:rounded-r-full"
+              className="h-full"
               style={{ background: sg.color }}
               initial={false}
               animate={{ flexGrow: Math.max(0, sg.value) }}
@@ -202,8 +199,7 @@ function HeroResult({ results }: { results: RegimeResult[] }) {
               }}
               className="block w-full overflow-hidden text-left"
             >
-              <span className="mt-4 flex items-start gap-2.5 rounded-2xl border border-dashed border-r-beckham/50 px-3 py-2.5 text-xs leading-relaxed text-ink-2 transition-colors hover:bg-r-beckham/[0.06]">
-                <span className="mt-1 size-2 shrink-0 rounded-full bg-r-beckham" />
+              <span className="mt-4 block border-l-2 border-r-beckham py-0.5 pl-3 text-xs leading-relaxed text-ink-2 transition-colors hover:text-ink">
                 <span>
                   {unavailable ? (
                     <>По вашим ответам этот режим недоступен. </>
@@ -254,15 +250,14 @@ export function Hero({ results }: { results: RegimeResult[] }) {
     <header className="relative mx-auto max-w-[1240px] px-4 pb-10 pt-4 sm:px-8 sm:pb-16 sm:pt-10">
       <Azulejo className="pointer-events-none absolute -right-10 -top-24 hidden h-[520px] w-[520px] text-ink opacity-[0.05] [mask-image:radial-gradient(closest-side,black,transparent)] lg:block" />
 
-      <motion.div
+      <motion.p
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease }}
-        className="mb-7 inline-flex flex-wrap items-center gap-2 rounded-full border border-line bg-surface/70 py-1 pl-1 pr-3 text-xs text-ink-2 backdrop-blur"
+        className="mb-6 max-w-3xl text-sm leading-relaxed text-ink-3"
       >
-        <span className="rounded-full bg-ink px-2 py-0.5 font-semibold text-bg">2026</span>
-        Сверено с BOE {verified} · 15 регионов · 6 режимов
-      </motion.div>
+        <b className="font-semibold text-ink">Налоги Испании 2026.</b> Ставки сверены с BOE {verified}, все 15 регионов общего режима.
+      </motion.p>
 
       <h1 className="serif max-w-6xl text-[46px] font-medium leading-[0.98] tracking-[-0.035em] text-ink sm:text-7xl lg:text-[96px]">
         <Word delay={0}>Сколько</Word> <Word delay={0.06}>останется</Word>{" "}
@@ -340,7 +335,7 @@ export function Hero({ results }: { results: RegimeResult[] }) {
                 key={p}
                 type="button"
                 onClick={() => s.set({ budget: p })}
-                className={`tnum rounded-full border px-2.5 py-1 text-xs transition ${
+                className={`tnum rounded-md border px-2.5 py-1 text-xs transition ${
                   s.budget === p ? "border-ink bg-ink text-bg" : "border-line text-ink-2 hover:border-line-strong hover:text-ink"
                 }`}
               >
@@ -351,7 +346,7 @@ export function Hero({ results }: { results: RegimeResult[] }) {
               type="button"
               aria-expanded={s.moreOpen}
               onClick={() => s.set({ moreOpen: !s.moreOpen })}
-              className="ml-1 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-accent transition hover:bg-accent/10"
+              className="ml-1 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-accent transition hover:bg-accent/10"
             >
               Ещё параметры
               <motion.svg animate={{ rotate: s.moreOpen ? 180 : 0 }} viewBox="0 0 20 20" className="size-3.5">

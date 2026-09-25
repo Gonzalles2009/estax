@@ -107,7 +107,7 @@ export default function Methodology() {
               ["limits", "Упрощения"],
               ["sources", "Источники"],
             ].map(([id, label]) => (
-              <a key={id} href={`#${id}`} className="rounded-full border border-line px-3 py-1.5 text-ink-2 transition hover:border-line-strong hover:text-ink">
+              <a key={id} href={`#${id}`} className="rounded-md border border-line px-3 py-1.5 text-ink-2 transition hover:border-line-strong hover:text-ink">
                 {label}
               </a>
             ))}

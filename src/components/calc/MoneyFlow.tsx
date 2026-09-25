@@ -7,6 +7,7 @@ import { flowsOf, nodeOrder, TERMINALS, type FlowLink, type FlowNode, type Termi
 import type { RegimeResult } from "@/lib/tax/types";
 import { n0, pct } from "@/lib/format";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
+import { Mark } from "@/components/ui/Mark";
 
 type N = SankeyNode<FlowNode, FlowLink>;
 type L = SankeyLink<FlowNode, FlowLink>;
@@ -98,7 +99,7 @@ export function MoneyFlow({ result }: { result: RegimeResult }) {
   return (
     <div ref={ref} className="relative w-full select-none" style={{ height: H }}>
       {graph.invalid && (
-        <div className="grid h-full place-items-center rounded-2xl border border-dashed border-line-strong p-6 text-center text-sm text-ink-2">
+        <div className="grid h-full place-items-center rounded-[10px] border border-dashed border-line-strong p-6 text-center text-sm text-ink-2">
           {graph.invalid}
         </div>
       )}
@@ -230,7 +231,7 @@ export function MoneyFlow({ result }: { result: RegimeResult }) {
                 onMouseLeave={() => setHover(null)}
               >
                 <div className="flex items-center gap-1.5 text-[11px] text-ink-3 sm:text-xs">
-                  <span className="size-2 shrink-0 rounded-full" style={{ background: meta.color }} />
+                  <Mark color={meta.color} className="!h-3" />
                   <span className="truncate">{meta.label}</span>
                   <span className="tnum ml-auto">{pct(total / rootTotal, 0)}</span>
                 </div>

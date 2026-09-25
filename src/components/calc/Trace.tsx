@@ -9,6 +9,7 @@ import { SOURCES, type KnownSourceId } from "@/lib/tax/sources";
 import type { RegimeResult, Step, StepGroup } from "@/lib/tax/types";
 import { n0 } from "@/lib/format";
 import { useCurrentRegime } from "./useCurrent";
+import { Mark } from "@/components/ui/Mark";
 
 const GROUPS: { id: StepGroup; title: string; hint: string }[] = [
   { id: "flow", title: "Движение денег", hint: "За год, в евро" },
@@ -80,19 +81,19 @@ export function Trace({ results }: { results: RegimeResult[] }) {
               role="tab"
               aria-selected={active}
               onClick={() => set({ focus: id })}
-              className={`relative shrink-0 rounded-full px-3.5 py-2 text-sm transition-colors ${
+              className={`relative shrink-0 rounded-lg px-3.5 py-2 text-sm transition-colors ${
                 active ? "text-ink" : "text-ink-3 hover:text-ink-2"
               }`}
             >
               {active && (
                 <motion.span
                   layoutId="trace-tab"
-                  className="absolute inset-0 rounded-full border border-line-strong bg-ink/[0.06]"
+                  className="absolute inset-0 rounded-lg border border-line-strong bg-ink/[0.06]"
                   transition={{ type: "spring", stiffness: 400, damping: 34 }}
                 />
               )}
               <span className="relative flex items-center gap-2">
-                <span className="size-2 rounded-full" style={{ background: REGIME_META[id].color }} />
+                <Mark color={REGIME_META[id].color} className="!h-3" />
                 {REGIME_META[id].short}
               </span>
             </button>
@@ -113,7 +114,7 @@ export function Trace({ results }: { results: RegimeResult[] }) {
             const steps = r.steps.filter((s) => s.group === g.id);
             if (!steps.length) return null;
             return (
-              <section key={g.id} className="rounded-2xl border border-line bg-ink/[0.02] p-4">
+              <section key={g.id} className="rounded-[10px] border border-line bg-ink/[0.02] p-4">
                 <header className="mb-3 flex items-baseline justify-between">
                   <h3 className="text-sm font-semibold text-ink">{g.title}</h3>
                   <span className="text-[11px] text-ink-3">{g.hint}</span>
@@ -161,8 +162,8 @@ export function Trace({ results }: { results: RegimeResult[] }) {
           className="mt-6 grid gap-3 md:grid-cols-2"
         >
           {r.notes.map((n) => (
-            <li key={n} className="flex gap-3 rounded-2xl border border-line p-4 text-[13px] leading-relaxed text-ink-2">
-              <span className="mt-1 size-1.5 shrink-0 rounded-full" style={{ background: REGIME_META[current].color }} />
+            <li key={n} className="flex gap-3 rounded-[10px] border border-line p-4 text-[13px] leading-relaxed text-ink-2">
+              <Mark color={REGIME_META[current].color} className="mt-1" />
               {n}
             </li>
           ))}

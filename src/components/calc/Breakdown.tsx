@@ -9,6 +9,7 @@ import { REGIME_IDS } from "@/lib/tax/engine";
 import type { RegimeResult } from "@/lib/tax/types";
 import { eur, n0, pct } from "@/lib/format";
 import { SEGMENT_META, segmentsOf, type SegmentKey } from "./segments";
+import { Mark } from "@/components/ui/Mark";
 
 export function Breakdown({ results }: { results: RegimeResult[] }) {
   const { selected, set } = useCalc(useShallow((s) => ({ selected: s.selected, set: s.set })));
@@ -22,7 +23,7 @@ export function Breakdown({ results }: { results: RegimeResult[] }) {
         <ul className="flex flex-wrap gap-x-4 gap-y-1.5" aria-label="Легенда">
           {(Object.keys(SEGMENT_META) as SegmentKey[]).map((k) => (
             <li key={k} className="flex items-center gap-2 text-xs text-ink-2">
-              <span className="size-2.5 rounded-[3px]" style={{ background: SEGMENT_META[k].color }} />
+              <span className="h-[3px] w-3 rounded-[1px]" style={{ background: SEGMENT_META[k].color }} />
               {SEGMENT_META[k].label}
             </li>
           ))}
@@ -30,7 +31,7 @@ export function Breakdown({ results }: { results: RegimeResult[] }) {
         <button
           type="button"
           onClick={() => setTable((v) => !v)}
-          className="rounded-full border border-line px-3 py-1 text-xs text-ink-2 transition hover:border-line-strong hover:text-ink"
+          className="rounded-md border border-line px-3 py-1 text-xs text-ink-2 transition hover:border-line-strong hover:text-ink"
         >
           {table ? "Показать полосами" : "Показать таблицей"}
         </button>
@@ -60,7 +61,7 @@ export function Breakdown({ results }: { results: RegimeResult[] }) {
                 >
                   <div className="mb-1.5 flex items-baseline justify-between gap-3">
                     <span className="flex items-center gap-2 text-sm font-medium text-ink">
-                      <span className="size-2 rounded-full" style={{ background: REGIME_META[r.regime].color }} />
+                      <Mark color={REGIME_META[r.regime].color} className="!h-3" />
                       {REGIME_META[r.regime].name}
                     </span>
                     <span className="tnum text-xs text-ink-3">
@@ -74,7 +75,7 @@ export function Breakdown({ results }: { results: RegimeResult[] }) {
                       return (
                         <motion.div
                           key={s.key}
-                          className="relative min-w-0 overflow-hidden first:rounded-l-xl last:rounded-r-xl"
+                          className="relative min-w-0 overflow-hidden first:rounded-l-[6px] last:rounded-r-[6px]"
                           style={{ background: s.color }}
                           initial={false}
                           animate={{ flexGrow: s.value, opacity: hover?.regime === r.regime && !on ? 0.55 : 1 }}

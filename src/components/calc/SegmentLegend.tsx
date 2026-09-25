@@ -12,7 +12,7 @@ export function SegmentLegend({ r, className = "" }: { r: RegimeResult; classNam
   ].filter(Boolean);
   const item = (color: string, text: string, title?: string) => (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap" title={title}>
-      <span className="size-1.5 shrink-0 rounded-full" style={{ background: color }} />
+      <span className="h-[3px] w-3 shrink-0 rounded-[1px]" style={{ background: color }} />
       {text}
     </span>
   );

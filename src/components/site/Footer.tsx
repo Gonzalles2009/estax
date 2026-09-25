@@ -5,7 +5,7 @@ import { Logo } from "./Logo";
 export function Footer() {
   const verified = new Date(P.verifiedAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
   return (
-    <footer className="mx-auto mt-28 max-w-[1240px] px-4 pb-32 sm:px-8 lg:pb-14">
+    <footer className="mx-auto mt-28 max-w-[1240px] px-4 pb-44 sm:px-8 lg:pb-14">
       <div className="flex flex-col gap-10 border-t border-line pt-10 md:flex-row md:items-start md:justify-between">
         <div className="max-w-md">
           <div className="flex items-center gap-2.5">

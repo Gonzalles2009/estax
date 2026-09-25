@@ -10,6 +10,7 @@ import { Segmented } from "@/components/ui/controls";
 import { NetChart } from "./NetChart";
 import { useCurves } from "./useResults";
 import { leaderOf, useAvailability } from "./useCurrent";
+import { Mark } from "@/components/ui/Mark";
 
 const MODE_HINT: Record<ChartMode, string> = {
   net: "Сколько остаётся вам в месяц, после налогов, взносов и расходов",
@@ -72,7 +73,7 @@ export function ChartPanel() {
         {leaders.map((l, i) => (
           <span key={`${l.r}-${i}`} className="flex items-center gap-1.5">
             {i > 0 && <span aria-hidden>→</span>}
-            <span className="size-2 rounded-full" style={{ background: REGIME_META[l.r].color }} />
+            <Mark color={REGIME_META[l.r].color} className="!h-3" />
             <span className="text-ink-2">{REGIME_META[l.r].short}</span>
             <span className="tnum">
               {leaders.length === 1 ? "на всём диапазоне" : i === 0 ? `до ${kEur(l.to)}` : `с ${kEur(l.from)}`}
