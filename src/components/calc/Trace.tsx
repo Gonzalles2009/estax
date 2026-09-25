@@ -8,6 +8,7 @@ import { REGIME_IDS } from "@/lib/tax/engine";
 import { SOURCES, type KnownSourceId } from "@/lib/tax/sources";
 import type { RegimeResult, Step, StepGroup } from "@/lib/tax/types";
 import { n0 } from "@/lib/format";
+import { useCurrentRegime } from "./useCurrent";
 
 const GROUPS: { id: StepGroup; title: string; hint: string }[] = [
   { id: "flow", title: "Движение денег", hint: "За год, в евро" },
@@ -40,7 +41,7 @@ function Amount({ step }: { step: Step }) {
   );
 }
 
-function SourceChip({ id }: { id: string }) {
+export function SourceChip({ id }: { id: string }) {
   const src = id.startsWith("https://")
     ? { url: id, short: "Закон региона", title: "Консолидированный текст регионального закона в BOE" }
     : SOURCES[id as KnownSourceId];
@@ -62,13 +63,10 @@ function SourceChip({ id }: { id: string }) {
 }
 
 export function Trace({ results }: { results: RegimeResult[] }) {
-  const { selected, focus, set } = useCalc(
-    useShallow((s) => ({ selected: s.selected, focus: s.focus, set: s.set })),
-  );
+  const { selected, set } = useCalc(useShallow((s) => ({ selected: s.selected, set: s.set })));
   const tabs = REGIME_IDS.filter((id) => selected.includes(id));
-  // Как в потоке денег: выбранный пользователем режим или лучший
-  const best = results.filter((x) => selected.includes(x.regime)).sort((a, b) => b.netAnnual - a.netAnnual)[0];
-  const current = focus && tabs.includes(focus) ? focus : best.regime;
+  // Как в потоке денег: выбранный пользователем режим или лучший из доступных
+  const current = useCurrentRegime(results).current.regime;
   const r = results.find((x) => x.regime === current)!;
 
   return (

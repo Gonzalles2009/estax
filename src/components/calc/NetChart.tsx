@@ -9,6 +9,7 @@ import type { RegimeId } from "@/lib/tax/types";
 import { linear, niceDomain, niceTicks } from "@/lib/scale";
 import { kEur, n0, pct } from "@/lib/format";
 import type { CurvePoint } from "./useResults";
+import { leaderOf, useAvailability } from "./useCurrent";
 
 function useWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null);
@@ -68,6 +69,7 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
       set: s.set,
     })),
   );
+  const avail = useAvailability();
   const [wrapRef, width] = useWidth<HTMLDivElement>();
   const [hoverX, setHoverX] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -119,8 +121,7 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
     const segs: { from: number; to: number; r: RegimeId }[] = [];
     for (let i = 0; i < points.length; i++) {
       const p = points[i];
-      let best = selected[0];
-      for (const r of selected) if (p.net[r] > p.net[best]) best = r;
+      const best = leaderOf(p.net, selected, avail);
       const x0 = i === 0 ? p.x : (points[i - 1].x + p.x) / 2;
       const x1 = i === points.length - 1 ? p.x : (p.x + points[i + 1].x) / 2;
       const last = segs[segs.length - 1];
@@ -128,7 +129,7 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
       else segs.push({ from: x0, to: x1, r: best });
     }
     return segs;
-  }, [points, selected]);
+  }, [points, selected, avail]);
 
   const at = useMemo(() => interpolate(points, Math.min(budget, xMax)), [points, budget, xMax]);
   const hoverPoint = hoverX !== null ? interpolate(points, hoverX) : null;
@@ -247,7 +248,8 @@ export function NetChart({ points, xMax }: { points: CurvePoint[]; xMax: number 
           {/* Линии режимов */}
           {selected.map((r) => {
             const meta = REGIME_META[r];
-            const dim = highlight !== null && highlight !== r;
+            // Недоступный пользователю режим — бледной линией, только для сравнения
+            const dim = (highlight !== null && highlight !== r) || (highlight !== r && avail(r) === "no");
             // Пунктир несовместим с анимацией pathLength (она сама управляет dasharray) — его проявляем прозрачностью
             const draw = meta.dashed ? {} : { pathLength: 1 };
             return (

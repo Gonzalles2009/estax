@@ -14,12 +14,13 @@ import { calculate } from "@/lib/tax/engine";
 import { useInputs } from "./useResults";
 import { Azulejo } from "@/components/site/Background";
 import { MoreSettings } from "./MoreSettings";
-import { useCurrentRegime } from "./FlowSection";
+import { useCurrentRegime } from "./useCurrent";
+import { BeckhamCheck } from "./BeckhamCheck";
 import { segmentsOf } from "./segments";
+import { SegmentLegend } from "./SegmentLegend";
 import { REGIME_META } from "@/lib/regimes";
 import type { RegimeResult } from "@/lib/tax/types";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
-import { pct } from "@/lib/format";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -47,7 +48,7 @@ const fmtRate = (r: number) => `${(r * 100).toLocaleString("ru-RU", { maximumFra
 
 const PRESETS = [30000, 45000, 60000, 80000, 100000, 150000];
 
-function BudgetInput() {
+export function BudgetInput({ className = "" }: { className?: string }) {
   const budget = useCalc((s) => s.budget);
   const set = useCalc((s) => s.set);
   const [draft, setDraft] = useState<string | null>(null);
@@ -58,7 +59,7 @@ function BudgetInput() {
     setDraft(null);
   };
   return (
-    <span className="inline-field inline-flex items-baseline px-1">
+    <span className={`inline-field inline-flex items-baseline px-1 ${className}`}>
       <input
         aria-label="Годовая сумма, евро"
         inputMode="numeric"
@@ -94,10 +95,55 @@ function Word({ children, delay }: { children: ReactNode; delay: number }) {
   );
 }
 
+/** Варианты региона и семьи: в списке сразу видно, сколько останется — для текущего режима */
+export function usePickerOptions(results: RegimeResult[]) {
+  const { current } = useCurrentRegime(results);
+  const inputs = useInputs();
+  const regionOptions = useMemo<PickerOption<RegionId>[]>(() => {
+    const here = calculate(current.regime, inputs).netMonthly;
+    return REGION_ORDER.map((id) => {
+      const r = REGIONS[id];
+      const net = calculate(current.regime, { ...inputs, region: id }).netMonthly;
+      const diff = net - here;
+      return {
+        value: id,
+        label: r.name,
+        hint: `IRPF региона ${fmtRate(r.scale[0][2])}–${fmtRate(r.scale[r.scale.length - 1][2])}${r.minimos ? " · свои минимумы" : ""}`,
+        aside: `${n0(net)} €`,
+        asideHint: id === inputs.region ? "сейчас" : Math.abs(diff) < 0.5 ? "так же" : `${diff > 0 ? "+" : "−"}${n0(Math.abs(diff))} €`,
+      };
+    });
+  }, [current.regime, inputs]);
+
+  const familyOptions = useMemo<PickerOption<Family>[]>(
+    () =>
+      (Object.keys(FAMILY_LABEL) as Family[]).map((f) => ({
+        value: f,
+        label: FAMILY_LABEL[f],
+        hint: FAMILY_HINT[f],
+        aside: `${n0(calculate(current.regime, { ...inputs, family: f }).netMonthly)} €`,
+      })),
+    [current.regime, inputs],
+  );
+  const pickerFooter = <span className="text-[11px] text-ink-3">{REGIME_META[current.regime].short} · €/мес</span>;
+  return { regionOptions, familyOptions, pickerFooter };
+}
+
+export const FAMILY_SHORT: Record<Family, string> = {
+  single: "один / одна",
+  couple: "пара",
+  couple_joint: "пара, совместно",
+};
+
 /** Мгновенный ответ рядом с формой: меняется вместе с каждым полем */
 function HeroResult({ results }: { results: RegimeResult[] }) {
-  const { current } = useCurrentRegime(results);
+  const { current, avail } = useCurrentRegime(results);
+  const set = useCalc((s) => s.set);
   const meta = REGIME_META[current.regime];
+  // Beckham не проверен, но дал бы больше — подсказываем проверить
+  const bk = results.find((r) => r.regime === "beckham")!;
+  const teaser = current.regime !== "beckham" && avail("beckham") === "check" && bk.netMonthly - current.netMonthly >= 1;
+  const unavailable = avail(current.regime) === "no";
   return (
     <motion.div
       initial={{ opacity: 0, y: 24, rotate: 2 }}
@@ -141,10 +187,37 @@ function HeroResult({ results }: { results: RegimeResult[] }) {
             />
           ))}
         </div>
-        <div className="mt-2 flex justify-between text-xs text-ink-3">
-          <span>вам {pct(current.netAnnual / current.budget, 0)}</span>
-          <span>государству {pct(current.effectiveRate, 0)}</span>
-        </div>
+        <SegmentLegend r={current} className="mt-2 text-[11px]" />
+        <AnimatePresence initial={false}>
+          {(teaser || unavailable) && (
+            <motion.button
+              type="button"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease }}
+              onClick={() => {
+                set({ checkOpen: true });
+                requestAnimationFrame(() => document.getElementById("beckham-check")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+              }}
+              className="block w-full overflow-hidden text-left"
+            >
+              <span className="mt-4 flex items-start gap-2.5 rounded-2xl border border-dashed border-r-beckham/50 px-3 py-2.5 text-xs leading-relaxed text-ink-2 transition-colors hover:bg-r-beckham/[0.06]">
+                <span className="mt-1 size-2 shrink-0 rounded-full bg-r-beckham" />
+                <span>
+                  {unavailable ? (
+                    <>По вашим ответам этот режим недоступен. </>
+                  ) : (
+                    <>
+                      С Ley Beckham — <b className="tnum font-semibold text-ink">{n0(bk.netMonthly)} €/мес</b>, если он вам доступен.{" "}
+                    </>
+                  )}
+                  <span className="whitespace-nowrap font-medium text-accent">Проверить →</span>
+                </span>
+              </span>
+            </motion.button>
+          )}
+        </AnimatePresence>
         <a
           href="#flow"
           className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-accent underline-offset-4 hover:underline"
@@ -173,36 +246,8 @@ export function Hero({ results }: { results: RegimeResult[] }) {
     })),
   );
   const pos = budgetToPos(s.budget);
-  const { current } = useCurrentRegime(results);
-  const inputs = useInputs();
 
-  // В списках сразу видно, сколько останется в каждом варианте — для выбранного режима
-  const regionOptions = useMemo<PickerOption<RegionId>[]>(() => {
-    const here = calculate(current.regime, inputs).netMonthly;
-    return REGION_ORDER.map((id) => {
-      const r = REGIONS[id];
-      const net = calculate(current.regime, { ...inputs, region: id }).netMonthly;
-      const diff = net - here;
-      return {
-        value: id,
-        label: r.name,
-        hint: `IRPF региона ${fmtRate(r.scale[0][2])}–${fmtRate(r.scale[r.scale.length - 1][2])}${r.minimos ? " · свои минимумы" : ""}`,
-        aside: `${n0(net)} €`,
-        asideHint: id === inputs.region ? "сейчас" : Math.abs(diff) < 0.5 ? "так же" : `${diff > 0 ? "+" : "−"}${n0(Math.abs(diff))} €`,
-      };
-    });
-  }, [current.regime, inputs]);
-
-  const familyOptions = useMemo<PickerOption<Family>[]>(
-    () =>
-      (Object.keys(FAMILY_LABEL) as Family[]).map((f) => ({
-        value: f,
-        label: FAMILY_LABEL[f],
-        hint: FAMILY_HINT[f],
-        aside: `${n0(calculate(current.regime, { ...inputs, family: f }).netMonthly)} €`,
-      })),
-    [current.regime, inputs],
-  );
+  const { regionOptions, familyOptions, pickerFooter } = usePickerOptions(results);
   const verified = new Date(P.verifiedAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
 
   return (
@@ -245,7 +290,7 @@ export function Hero({ results }: { results: RegimeResult[] }) {
             value={s.region}
             onChange={(v) => s.set({ region: v })}
             options={regionOptions}
-            footer={<span className="text-[11px] text-ink-3">{REGIME_META[current.regime].short} · €/мес</span>}
+            footer={pickerFooter}
           />
           ,{" "}
           <InlinePicker<Family>
@@ -254,7 +299,7 @@ export function Hero({ results }: { results: RegimeResult[] }) {
             value={s.family}
             onChange={(v) => s.set({ family: v })}
             options={familyOptions}
-            footer={<span className="text-[11px] text-ink-3">{REGIME_META[current.regime].short} · €/мес</span>}
+            footer={pickerFooter}
           />
           , детей —{" "}
           <span className="inline-field inline-flex px-1 text-ink">
@@ -277,7 +322,7 @@ export function Hero({ results }: { results: RegimeResult[] }) {
           .
         </p>
 
-        <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+        <div id="hero-controls" className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
           <input
             type="range"
             aria-label="Годовая сумма"
@@ -329,6 +374,10 @@ export function Hero({ results }: { results: RegimeResult[] }) {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <div className="mt-6">
+          <BeckhamCheck results={results} />
+        </div>
       </motion.div>
       <HeroResult results={results} />
       </div>

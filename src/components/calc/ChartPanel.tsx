@@ -9,6 +9,7 @@ import { kEur } from "@/lib/format";
 import { Segmented } from "@/components/ui/controls";
 import { NetChart } from "./NetChart";
 import { useCurves } from "./useResults";
+import { leaderOf, useAvailability } from "./useCurrent";
 
 const MODE_HINT: Record<ChartMode, string> = {
   net: "Сколько остаётся вам в месяц, после налогов, взносов и расходов",
@@ -25,18 +26,18 @@ export function ChartPanel() {
     })),
   );
   const { points, xMax } = useCurves();
+  const avail = useAvailability();
 
   const leaders = useMemo(() => {
     const out: { from: number; to: number; r: RegimeId }[] = [];
     for (const p of points) {
-      let best = selected[0];
-      for (const r of selected) if (p.net[r] > p.net[best]) best = r;
+      const best = leaderOf(p.net, selected, avail);
       const last = out[out.length - 1];
       if (last && last.r === best) last.to = p.x;
       else out.push({ from: p.x, to: p.x, r: best });
     }
     return out;
-  }, [points, selected]);
+  }, [points, selected, avail]);
 
   return (
     <div>

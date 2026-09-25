@@ -21,6 +21,8 @@ export default function Home() {
         </section>
       </main>
       <Footer />
+      {/* Место под плавающую панель параметров, чтобы она не закрывала подвал */}
+      <div aria-hidden className="h-36 sm:h-24" />
     </>
   );
 }

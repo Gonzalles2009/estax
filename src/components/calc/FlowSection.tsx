@@ -9,21 +9,16 @@ import type { RegimeResult } from "@/lib/tax/types";
 import { n0 } from "@/lib/format";
 import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
 import { MoneyFlow } from "./MoneyFlow";
+import { useCurrentRegime } from "./useCurrent";
+
+export { useCurrentRegime } from "./useCurrent";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-/** Выбранный режим: явно выбранный пользователем или лучший из сравниваемых */
-export function useCurrentRegime(results: RegimeResult[]) {
-  const { selected, focus } = useCalc(useShallow((s) => ({ selected: s.selected, focus: s.focus })));
-  const shown = results.filter((r) => selected.includes(r.regime)).sort((a, b) => b.netAnnual - a.netAnnual);
-  const best = shown[0];
-  const current = (focus && shown.find((r) => r.regime === focus)) || best;
-  return { shown, best, current, pinned: !!focus && current.regime === focus };
-}
-
 export function FlowSection({ results }: { results: RegimeResult[] }) {
   const { budget, region, set } = useCalc(useShallow((s) => ({ budget: s.budget, region: s.region, set: s.set })));
-  const { shown, best, current } = useCurrentRegime(results);
+  const { shown, best, current, avail } = useCurrentRegime(results);
+  const currentAvail = avail(current.regime);
   const employee = results.find((r) => r.regime === "employee")!;
   const meta = REGIME_META[current.regime];
   const vsEmployee = (current.netAnnual - employee.netAnnual) / 12;
@@ -51,14 +46,24 @@ export function FlowSection({ results }: { results: RegimeResult[] }) {
 
             <AnimatePresence mode="wait" initial={false}>
               <motion.p
-                key={`${current.regime}-${best.regime}`}
+                key={`${current.regime}-${best.regime}-${currentAvail}`}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.25 }}
                 className="mt-5 text-[15px] leading-relaxed text-ink-2"
               >
-                {current.regime === best.regime ? (
+                {currentAvail === "no" ? (
+                  <>
+                    <b className="font-semibold text-ink">{meta.name}</b> вам недоступен по результатам проверки — схема только для
+                    сравнения.
+                  </>
+                ) : currentAvail === "check" && vsBest < -0.5 ? (
+                  <>
+                    <b className="font-semibold text-ink">{meta.name}</b> даст на {n0(-vsBest)} € в месяц больше, чем «
+                    {REGIME_META[best.regime].name}», — если режим вам доступен.
+                  </>
+                ) : current.regime === best.regime ? (
                   <>
                     Лучший вариант — <b className="font-semibold text-ink">{meta.name}</b>.{" "}
                     {current.regime !== "employee" && vsEmployee > 0.5 && <>Это на {n0(vsEmployee)} € в месяц больше, чем в найме.</>}
@@ -94,6 +99,15 @@ export function FlowSection({ results }: { results: RegimeResult[] }) {
                         <span className="relative whitespace-nowrap font-medium">{m.short}</span>
                         {r.regime === best.regime && (
                           <span className={`relative rounded-full px-1.5 py-px text-[10px] font-semibold ${active ? "bg-bg/20" : "bg-f-you/20 text-ink"}`}>лучший</span>
+                        )}
+                        {avail(r.regime) !== "ok" && (
+                          <span
+                            className={`relative rounded-full border px-1.5 py-px text-[10px] font-medium ${
+                              active ? "border-bg/30" : avail(r.regime) === "no" ? "border-f-tax/40 text-f-tax" : "border-line-strong text-ink-3"
+                            }`}
+                          >
+                            {avail(r.regime) === "no" ? "недоступен" : "условно"}
+                          </span>
                         )}
                         <span className="tnum relative ml-auto hidden pl-3 lg:inline">{n0(r.netMonthly)} €</span>
                       </button>
