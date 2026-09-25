@@ -12,9 +12,10 @@ import { useCurrentRegime } from "./useCurrent";
 import type { Availability } from "@/lib/beckham";
 
 function fmtLoss(v: number, isBest: boolean, a: Availability) {
+  // Доступность важнее «лучшего»: непроверенный режим лучший, только если других не выбрано
   if (a === "no") return "вам недоступен";
+  if (a === "check") return v < -0.5 ? `+${n0(-v)} €, если доступен` : Math.abs(v) < 0.5 ? "если доступен" : `−${n0(v)} € в месяц`;
   if (isBest) return "лучший вариант";
-  if (a === "check" && v < -0.5) return `+${n0(-v)} €, если доступен`;
   return Math.abs(v) < 0.5 ? "так же" : `−${n0(v)} € в месяц`;
 }
 

@@ -64,6 +64,10 @@ export function FlowSection({ results }: { results: RegimeResult[] }) {
                     <b className="font-semibold text-ink">{meta.name}</b> даст на {n0(-vsBest)} € в месяц больше, чем «
                     {REGIME_META[best.regime].name}», — если режим вам доступен.
                   </>
+                ) : currentAvail === "check" && current.regime === best.regime ? (
+                  <>
+                    <b className="font-semibold text-ink">{meta.name}</b> — условный вариант: проверьте, доступен ли он вам.
+                  </>
                 ) : current.regime === best.regime ? (
                   <>
                     Лучший вариант — <b className="font-semibold text-ink">{meta.name}</b>.{" "}
@@ -104,7 +108,8 @@ export function FlowSection({ results }: { results: RegimeResult[] }) {
                               active ? "text-bg/70" : avail(r.regime) === "no" ? "text-f-tax" : "text-ink-3"
                             }`}
                           >
-                            {r.regime === best.regime ? "лучший" : avail(r.regime) === "no" ? "недоступен" : "условно"}
+                            {/* Доступность важнее: режим может оказаться «лучшим», только если других не выбрано */}
+                            {avail(r.regime) === "no" ? "недоступен" : avail(r.regime) === "check" ? "условно" : "лучший"}
                           </span>
                         )}
                         <span className="tnum relative ml-auto hidden pl-3 lg:inline">{n0(r.netMonthly)} €</span>
