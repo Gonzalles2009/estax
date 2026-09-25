@@ -21,6 +21,19 @@ const noop = () => () => {};
 const useIsClient = () => useSyncExternalStore(noop, () => true, () => false);
 const POPOVER_W = 400;
 
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/** Фокус на соседний по порядку табуляции элемент относительно данного */
+function focusSibling(from: HTMLElement | null, back: boolean) {
+  if (!from) return;
+  const all = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+    (el) => el.tabIndex >= 0 && (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0),
+  );
+  const i = all.indexOf(from);
+  const next = i === -1 ? from : all[i + (back ? -1 : 1)] ?? from;
+  next.focus();
+}
+
 interface Pos {
   top: number;
   left: number;
@@ -52,6 +65,8 @@ export function InlinePicker<T extends string>({
   const id = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  // Вся панель (заголовок, ручка шторки, список) — клик внутри неё не закрывает меню
+  const panelRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [active, setActive] = useState(0);
@@ -112,7 +127,7 @@ export function InlinePicker<T extends string>({
     if (!open) return;
     const onDown = (e: PointerEvent) => {
       const t = e.target as Node;
-      if (listRef.current?.contains(t) || triggerRef.current?.contains(t)) return;
+      if (panelRef.current?.contains(t) || triggerRef.current?.contains(t)) return;
       close(false);
     };
     document.addEventListener("pointerdown", onDown);
@@ -166,10 +181,18 @@ export function InlinePicker<T extends string>({
         choose(active);
         return;
       case "Escape":
-      case "Tab":
-        if (e.key === "Escape") e.preventDefault();
-        close(e.key === "Escape");
+        e.preventDefault();
+        close();
         return;
+      case "Tab": {
+        // Список живёт в портале в конце документа — Tab оттуда увёл бы фокус в конец страницы.
+        // Ведём себя как нативный select: следующее (или предыдущее) поле после слова-триггера.
+        e.preventDefault();
+        const back = e.shiftKey;
+        close(false);
+        requestAnimationFrame(() => focusSibling(triggerRef.current, back));
+        return;
+      }
     }
     // Поиск по первым буквам любого слова
     if (e.key.length === 1 && !e.metaKey && !e.ctrlKey) {
@@ -179,6 +202,11 @@ export function InlinePicker<T extends string>({
       const i = options.findIndex((o) => o.label.toLowerCase().split(/[\s/,-]+/).some((w) => w.startsWith(q)));
       if (i >= 0) setActive(i);
     }
+  };
+
+  // Клик по заголовку или ручке не должен уводить фокус из списка — иначе ломается клавиатура
+  const keepFocus = (e: React.MouseEvent) => {
+    if (!listRef.current?.contains(e.target as Node)) e.preventDefault();
   };
 
   const list = (
@@ -287,6 +315,8 @@ export function InlinePicker<T extends string>({
             {open && !sheet && pos && (
               <motion.div
                 key="popover"
+                ref={panelRef}
+                onMouseDown={keepFocus}
                 initial={{ opacity: 0, scale: 0.96, y: pos.above ? 8 : -8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.97, y: pos.above ? 6 : -6, transition: { duration: 0.15 } }}
@@ -326,6 +356,8 @@ export function InlinePicker<T extends string>({
                   onDragEnd={(_, info) => {
                     if (info.offset.y > 90 || info.velocity.y > 600) close(false);
                   }}
+                  ref={panelRef}
+                  onMouseDown={keepFocus}
                   className="card absolute inset-x-0 bottom-0 !rounded-b-none !rounded-t-[28px] px-2 pt-2"
                   style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
                 >
