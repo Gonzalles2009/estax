@@ -47,7 +47,7 @@ const FAMILIES: Family[] = ["single", "couple", "couple_joint"];
 const BASES: EmployeeBasis[] = ["cost", "gross"];
 const MODES: ChartMode[] = ["net", "share", "delta"];
 
-const KNOWN_KEYS = ["b", "r", "f", "k", "k3", "m", "ga", "gs", "n", "v", "s", "bk"];
+const KNOWN_KEYS = ["b", "r", "f", "k", "k3", "m", "ga", "gs", "n", "tp", "na", "v", "s", "bk"];
 
 export function toQuery(s: UiState): string {
   const q = new URLSearchParams();
@@ -64,6 +64,8 @@ export function toQuery(s: UiState): string {
   put("ga", s.gestoriaAutonomo, DEFAULTS.gestoriaAutonomo);
   put("gs", s.gestoriaSl, DEFAULTS.gestoriaSl);
   put("n", s.slNewCompany ? 1 : 0, 0);
+  put("tp", s.slTarifaPlana ? 1 : 0, 0);
+  put("na", s.noAlimony ? 1 : 0, 0);
   put("v", s.chartMode, DEFAULTS.chartMode);
   put("s", s.selected.join("."), DEFAULTS.selected.join("."));
   put("bk", encodeBeckham(s.beckham), "");
@@ -102,6 +104,8 @@ export function fromQuery(search: string): Partial<UiState> {
   const gs = num("gs");
   if (gs !== undefined) out.gestoriaSl = gs;
   if (q.get("n") === "1") out.slNewCompany = true;
+  if (q.get("tp") === "1") out.slTarifaPlana = true;
+  if (q.get("na") === "1") out.noAlimony = true;
   const v = q.get("v");
   if (v && MODES.includes(v as ChartMode)) out.chartMode = v as ChartMode;
   const sel = q.get("s");

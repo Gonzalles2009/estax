@@ -260,7 +260,7 @@ interface FamilyCredit {
 
 /** Вычет art. 81 bis уменьшает cuota diferencial: сначала общую часть, затем сбережения, остаток — выплата */
 function familyCredit(inputs: Inputs, general: number, savings: number, ssTotal: number): FamilyCredit {
-  const d = familyDeduction(inputs.family, inputs.children, ssTotal);
+  const d = familyDeduction(inputs.family, inputs.children, ssTotal, inputs.noAlimony);
   const fromGeneral = Math.min(d.amount, Math.max(0, general));
   const fromSavings = Math.min(d.amount - fromGeneral, Math.max(0, savings));
   return {
@@ -270,6 +270,13 @@ function familyCredit(inputs: Inputs, general: number, savings: number, ssTotal:
     savings: savings - fromSavings,
     benefit: d.amount - fromGeneral - fromSavings,
   };
+}
+
+/** Подсказка одинокому родителю с 2 детьми: вычет 81 bis зависит от алиментов, которых калькулятор не знает */
+function familyNotes(inputs: Inputs): string[] {
+  return inputs.family === "single" && inputs.children === 2 && !inputs.noAlimony
+    ? ["Одинокому родителю с 2 детьми, у которого нет права на алименты на них, положен вычет 1 200 € (art. 81 bis) — отметьте это в «Ещё параметры»."]
+    : [];
 }
 
 function familySteps(fc: FamilyCredit): Step[] {
@@ -351,6 +358,7 @@ function employee(inputs: Inputs): RegimeResult {
   const notes = [
     "Оплачиваемый отпуск, больничные, пособие по безработице (paro) и выходное пособие при увольнении — это деньги, которых нет в таблице.",
     "Рабочие расходы работник не может вычесть из налоговой базы.",
+    ...familyNotes(inputs),
   ];
   if (inputs.employeeBasis === "gross") {
     notes.unshift(
@@ -578,6 +586,7 @@ function autonomo(inputs: Inputs, firstYear: boolean): RegimeResult {
         "Нет оплачиваемого отпуска; больничный — с 4-го дня (60–75% базы, а база минимальная).",
         "Каждый квартал — modelo 130 (аванс 20% IRPF) и modelo 303 (IVA).",
       ];
+  notes.push(...familyNotes(inputs));
 
   return result(
     firstYear ? "autonomo_new" : "autonomo",
@@ -618,8 +627,8 @@ function evalSl(inputs: Inputs, salaryTarget: number, minRemuneration: number): 
   const revenue = inputs.budget;
   const pre = revenue - inputs.workExpenses * 12 - inputs.gestoriaSl * 12;
 
-  // Новая SL: socio впервые в RETA получает tarifa plana (art. 38 ter.9 LETA) на первые 12 месяцев
-  let quota = inputs.slNewCompany ? P.ss.reta.tarifaPlanaMonthly * 12 : P.ss.reta.societarioMinBase * P.ss.reta.rate * 12;
+  // Socio впервые в RETA получает tarifa plana (art. 38 ter.9 LETA) на первые 12 месяцев
+  let quota = inputs.slTarifaPlana ? P.ss.reta.tarifaPlanaMonthly * 12 : P.ss.reta.societarioMinBase * P.ss.reta.rate * 12;
   let salary = 0;
   let profit = 0;
   let is = 0;
@@ -632,7 +641,7 @@ function evalSl(inputs: Inputs, salaryTarget: number, minRemuneration: number): 
     profit = pre - salary - quota;
     is = corporateTax(profit, inputs.slNewCompany);
     dividends = Math.max(0, profit - is);
-    if (inputs.slNewCompany) {
+    if (inputs.slTarifaPlana) {
       tramo = "Tarifa plana";
       break;
     }
@@ -695,7 +704,7 @@ function sl(inputs: Inputs, safe: boolean): RegimeResult {
     { group: "flow", label: "Выручка компании без IVA", amount: inputs.budget, kind: "start" },
     { group: "flow", label: "Рабочие расходы", amount: -expenses, kind: "minus", source: "lis" },
     { group: "flow", label: "Гестория, годовой отчёт, регистры", amount: -gestoria, kind: "minus", source: "lis" },
-    inputs.slNewCompany
+    inputs.slTarifaPlana
       ? {
           group: "flow",
           label: `Cuota autónomo societario — tarifa plana ${n2(P.ss.reta.tarifaPlanaMonthly)} €/мес`,
@@ -758,13 +767,14 @@ function sl(inputs: Inputs, safe: boolean): RegimeResult {
     ? [
         `Вознаграждение вам ≥ 75% результата до него и ≥ ${fmt(P.socioProfesional.minAbsolute)} € (5 × IPREM) — «безопасная гавань» art. 18.6 LIS для профессиональных услуг, куда входит IT (IAE 763). В этих рамках калькулятор подбирает лучшее соотношение вознаграждения и дивидендов.`,
         "Ваше вознаграждение облагается как доход от деятельности (art. 27.1 LIRPF): вы в RETA, работаете в своей же компании. С него удерживается 15% (7% в первые годы).",
-        "Ставка 15% для новых компаний не положена, если ту же работу вы в прошлом году делали как autónomo (art. 29.1.b LIS); tarifa plana — если вы были в RETA в последние два года.",
+        "Ставка 15% для новых компаний не положена, если ту же работу вы в прошлом году делали как autónomo (art. 29.1.b LIS).",
         "Деньги можно не выводить: оставленная в компании прибыль не облагается налогом на дивиденды, пока вы её не распределите.",
       ]
     : [
         "Минимум налогов без оглядки на art. 18.6 LIS. Если компания по сути продаёт ваш личный профессиональный труд, Hacienda может переквалифицировать дивиденды в вознаграждение (operación vinculada) и доначислить IRPF с процентами и штрафом.",
         "Показано для сравнения, а не как рекомендация.",
       ];
+  notes.push(...familyNotes(inputs));
 
   return result(
     safe ? "sl_safe" : "sl_optimal",

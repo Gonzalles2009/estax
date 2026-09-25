@@ -30,6 +30,8 @@ export const DEFAULTS: UiState = {
   gestoriaAutonomo: 60,
   gestoriaSl: 180,
   slNewCompany: false,
+  slTarifaPlana: false,
+  noAlimony: false,
   // Временные льготы первого года и агрессивная SL — только по запросу, чтобы не искажать «лучший» режим
   selected: ["employee", "beckham", "autonomo", "sl_safe"],
   focus: null,
@@ -59,6 +61,8 @@ export function inputsOf(s: Inputs): Inputs {
     gestoriaAutonomo: s.gestoriaAutonomo,
     gestoriaSl: s.gestoriaSl,
     slNewCompany: s.slNewCompany,
+    slTarifaPlana: s.slTarifaPlana,
+    noAlimony: s.noAlimony,
   };
 }
 

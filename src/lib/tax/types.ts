@@ -48,6 +48,16 @@ export interface Inputs {
   gestoriaSl: number;
   /** SL в первые два года с прибылью — ставка 15% (art. 29.1 LIS) */
   slNewCompany: boolean;
+  /**
+   * Socio SL в первые 12 месяцев в RETA и не был в нём два года — tarifa plana (art. 38 ter.9 LETA).
+   * Отдельно от slNewCompany: у льгот разные сроки и условия.
+   */
+  slTarifaPlana: boolean;
+  /**
+   * У одинокого родителя нет права на алименты на детей (не «не платят», а нет права) — условие вычета
+   * 1 200 € при двух детях (art. 81 bis.1.c: «sin derecho a percibir anualidades por alimentos»).
+   */
+  noAlimony: boolean;
 }
 
 export type Bracket = readonly [from: number, to: number, rate: number];

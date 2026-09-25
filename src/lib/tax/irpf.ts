@@ -162,7 +162,13 @@ export function rentasBajasReduction(rnActividad: number, otrasRentas = 0): numb
  * кто работает и платит взносы. couple — оба родителя имеют право, вычет делится пополам.
  * ssTotal — cotizaciones totales за год: лимит для базовых 1 200 €; надбавки под лимит не попадают.
  */
-export function familyDeduction(family: Family, children: number, ssTotal: number): { amount: number; label: string } {
+export function familyDeduction(
+  family: Family,
+  children: number,
+  ssTotal: number,
+  /** Одинокий родитель без права на алименты — иначе при двух детях вычета нет */
+  noAlimony = false,
+): { amount: number; label: string } {
   const f = P.irpf.familiaNumerosa;
   let limited = 0;
   let extra = 0;
@@ -175,7 +181,7 @@ export function familyDeduction(family: Family, children: number, ssTotal: numbe
     limited = f.base;
     extra = f.extraChild * (children - f.generalMin);
     label = "familia numerosa general";
-  } else if (family === "single" && children === 2) {
+  } else if (family === "single" && children === 2 && noAlimony) {
     limited = f.base;
     label = "одинокий родитель с 2 детьми";
   } else {
